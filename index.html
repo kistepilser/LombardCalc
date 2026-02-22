@@ -38,11 +38,11 @@
             <div class="section">
                 <span class="section-title">Тип и вес</span>
                 <div class="radio-group" id="itemTypeGroup">
-                    <label class="radio-label"><input type="radio" name="itemType" value="0.1" checked><span class="radio-btn"><span class="calc-val">Кольцо</span></span></label>
-                    <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn"><span class="calc-val">Серьги</span></span></label>
-                    <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn"><span class="calc-val">Подвес</span></span></label>
-                    <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn"><span class="calc-val">Браслет</span></span></label>
-                    <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn"><span class="calc-val">Цепь</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.1" checked><span class="radio-btn single-line"><span class="calc-val">Кольцо</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn single-line"><span class="calc-val">Серьги</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn single-line"><span class="calc-val">Подвес</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn single-line"><span class="calc-val">Браслет</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn single-line"><span class="calc-val">Цепь</span></span></label>
                 </div>
                 <div class="input-group">
                     <div class="input-wrapper">
@@ -65,11 +65,11 @@
             <div class="section">
                 <span class="section-title">Проба золота</span>
                 <div class="radio-group">
-                    <label class="radio-label"><input type="radio" name="purity" value="375"><span class="radio-btn"><span class="calc-val">375</span></span></label>
-                    <label class="radio-label"><input type="radio" name="purity" value="500"><span class="radio-btn"><span class="calc-val">500</span></span></label>
-                    <label class="radio-label"><input type="radio" name="purity" value="583"><span class="radio-btn"><span class="calc-val">583</span></span></label>
-                    <label class="radio-label"><input type="radio" name="purity" value="585" checked><span class="radio-btn"><span class="calc-val">585</span></span></label>
-                    <label class="radio-label"><input type="radio" name="purity" value="750"><span class="radio-btn"><span class="calc-val">750</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="375"><span class="radio-btn single-line"><span class="calc-val">375</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="500"><span class="radio-btn single-line"><span class="calc-val">500</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="583"><span class="radio-btn single-line"><span class="calc-val">583</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="585" checked><span class="radio-btn single-line"><span class="calc-val">585</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="750"><span class="radio-btn single-line"><span class="calc-val">750</span></span></label>
                 </div>
             </div>
 
@@ -106,7 +106,7 @@
                 <div class="res-line"><span>Тариф пересчета (<span id="res-purity-label">585</span>):</span><span id="res-actual-price">0 ₽</span></div>
                 
                 <div id="insurance-blocks" class="insurance-block" style="display: none;">
-                    <div class="res-line"><span class="bold-text">На руки клиенту:</span><span id="res-hand" class="accent-text">0 ₽</span></div>
+                    <div class="res-line"><span style="color: var(--text-main); font-weight: 600;">На руки клиенту:</span><span id="res-hand" style="font-size: 16px; color: var(--accent);">0 ₽</span></div>
                     <div class="res-line" style="margin-top: 10px;"><span>Страховка (23.76%):</span><span id="res-ins">0 ₽</span></div>
                 </div>
 
@@ -116,14 +116,14 @@
                 </div>
 
                 <div id="margin-block" class="margin-block">
-                    <div class="res-line margin-line"><span class="margin-title">Прогнозируемая маржа:</span><span id="res-margin" class="margin-val">0 ₽</span></div>
-                    <div class="margin-hint">От розничной цены продажи 6 500 ₽ (585 проба)</div>
+                    <div class="res-line" style="margin-bottom: 0;"><span style="color: var(--margin-color); font-weight: 700;">Прогнозируемая маржа:</span><span id="res-margin" style="color: var(--margin-color); font-size: 16px;">0 ₽</span></div>
+                    <div style="font-size: 11px; color: rgba(139, 92, 246, 0.8); margin-top: 6px; line-height: 1.3;">От розничной цены продажи 6 500 ₽ (585 проба)</div>
                 </div>
 
                 <div id="interest-block" class="interest-block">
                     <div class="interest-header" id="btn-interest-toggle">
                         <span>Прогноз процентов (Залог)</span>
-                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </div>
                     <div class="interest-content">
                         <div class="input-wrapper" style="margin-bottom: 12px; margin-top: 5px;">
@@ -133,13 +133,12 @@
                         <div class="res-line"><span>Дней в залоге:</span><span id="int-days">1</span></div>
                         <div class="res-line"><span>Процентная ставка:</span><span id="int-percent">0.000%</span></div>
                         <div class="res-line"><span>Начислено процентов:</span><span id="int-sum" style="color: var(--danger);">0 ₽</span></div>
-                        <div class="res-line int-total">
-                            <span>Итого к возврату:</span>
-                            <span id="int-total-return">0 ₽</span>
+                        <div class="res-line total" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.1); flex-direction: row; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 13px; font-weight: 700; color: var(--text-main);">Итого к возврату:</span>
+                            <span id="int-total-return" style="font-size: 18px; color: var(--text-main);">0 ₽</span>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
