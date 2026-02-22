@@ -1,0 +1,539 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ломбардный эксперт Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 15% 50%, #f0f4fd, rgba(255,255,255,0)), 
+                           radial-gradient(circle at 85% 30%, #e2eafc, rgba(255,255,255,0)),
+                           #f8f9fc;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --glass-shadow: 0 16px 40px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255,255,255,0.5);
+            
+            --text-main: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent: #0071e3;
+            --danger: #ff3b30;
+            --danger-bg: rgba(255, 59, 48, 0.08);
+            
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --radius-sm: 10px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+        body { 
+            background: var(--bg-gradient); 
+            background-attachment: fixed;
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            padding: 40px 20px; 
+            color: var(--text-main); 
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 25px;
+            width: 100%;
+            max-width: 1200px;
+            align-items: start;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg); 
+            backdrop-filter: blur(25px); 
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border); 
+            border-radius: var(--radius-lg);
+            box-shadow: var(--glass-shadow); 
+            padding: 30px;
+        }
+
+        h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 25px; }
+
+        .section { margin-bottom: 20px; }
+        .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 12px; display: block; }
+
+        /* Тумблеры */
+        .switches-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .switch-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.6); padding: 14px 16px; border-radius: var(--radius-md); border: 1px solid var(--glass-border); }
+        .switch-info div { font-size: 14px; font-weight: 600; }
+        .switch-info span { font-size: 12px; color: var(--text-secondary); }
+
+        .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e9e9ea; border-radius: 34px; transition: .3s; }
+        .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        input:checked + .slider { background-color: #34c759; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Кнопки */
+        .radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .radio-label { flex: 1; min-width: 75px; cursor: pointer; }
+        .radio-label input { display: none; }
+        .radio-btn { display: flex; height: 44px; justify-content: center; align-items: center; background: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.9); border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; transition: 0.2s; }
+        .radio-label:hover .radio-btn { background: #fff; }
+        .radio-label input:checked + .radio-btn { background: #fff; border-color: var(--accent); color: var(--accent); box-shadow: 0 4px 12px rgba(0,113,227,0.12); }
+        .radio-label input:disabled + .radio-btn { opacity: 0.4; cursor: not-allowed; background: rgba(0,0,0,0.02); color: var(--text-secondary); border-color: transparent; }
+
+        /* Вводы */
+        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .input-wrapper { display: flex; flex-direction: column; gap: 6px; }
+        .input-wrapper label { font-size: 12px; font-weight: 500; color: var(--text-secondary); padding-left: 2px; }
+        .glass-input { width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.6); font-size: 14px; font-weight: 500; outline: none; transition: 0.2s; }
+        .glass-input:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,0.1); }
+        .glass-input:disabled { background: transparent; color: var(--accent); font-weight: 600; }
+
+        /* --- КАМНИ --- */
+        .stones-container { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        
+        .stone-row {
+            display: flex; gap: 8px; align-items: center;
+            background: rgba(255,255,255,0.6); padding: 8px; border-radius: var(--radius-sm); 
+            border: 1px solid rgba(255,255,255,0.9); transition: 0.2s;
+        }
+        .stone-row:hover { background: rgba(255,255,255,0.8); }
+        .stone-content { flex: 1; min-width: 0; }
+        
+        .stone-inputs { 
+            display: grid; grid-template-columns: 1.2fr 1.2fr 0.8fr 0.8fr 0.8fr 0.6fr; gap: 6px; align-items: center; 
+        }
+        .stone-inputs select, .stone-inputs input { padding: 8px; font-size: 13px; height: 38px; }
+
+        /* УМНОЕ СКРЫТИЕ ПОЛЕЙ ЧЕРЕЗ CSS ДЛЯ РАЗНЫХ ОГРАНОК */
+        .stone-row[data-shape="krug"] .s-w, .stone-row[data-shape="krug"] .s-h,
+        .stone-row[data-shape="shar"] .s-w, .stone-row[data-shape="shar"] .s-h { display: none; }
+        
+        .stone-row[data-shape="kvadrat"] .s-w { display: none; }
+
+        @media (min-width: 601px) {
+            .stone-row[data-shape="krug"] .s-l, .stone-row[data-shape="shar"] .s-l { grid-column: span 3; }
+            .stone-row[data-shape="kvadrat"] .s-l { grid-column: span 2; }
+        }
+        
+        /* Свернутое состояние */
+        .stone-row.collapsed .stone-inputs { display: none; }
+        
+        .stone-summary { 
+            display: none; align-items: center; justify-content: space-between; 
+            cursor: pointer; padding: 8px 10px; border-radius: 6px;
+        }
+        .stone-row.collapsed .stone-summary { display: flex; }
+        .stone-summary:hover { background: rgba(0,0,0,0.03); }
+        .summary-text { font-size: 14px; font-weight: 500; color: var(--text-main); display: flex; align-items: center; gap: 10px; width: 100%; }
+
+        .btn-add { width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm); background: rgba(0,113,227,0.08); color: var(--accent); font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; margin-top: 4px; }
+        .btn-add:hover { background: rgba(0,113,227,0.15); }
+        
+        .btn-remove { width: 38px; height: 38px; flex-shrink: 0; background: var(--danger-bg); color: var(--danger); border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-remove:hover { background: rgba(255, 59, 48, 0.15); }
+
+        /* Чек (Правая колонка) */
+        .results-sidebar { position: sticky; top: 40px; display: flex; flex-direction: column; gap: 20px; }
+        .receipt-card { background: #fff; border-radius: var(--radius-lg); padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); }
+        .receipt-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main); }
+
+        .cart-container { background: #fcfcfc; border: 1px solid #f0f0f0; border-radius: var(--radius-md); padding: 15px; margin-bottom: 20px; display: none; }
+        .cart-header { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        .cart-item { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
+        .cart-item.deduction span:first-child { color: var(--text-main); }
+        .cart-item.deduction span:last-child { color: var(--danger); font-variant-numeric: tabular-nums; }
+        .cart-total { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd; color: var(--text-main); }
+
+        .res-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 14px; }
+        .res-line span:first-child { color: var(--text-secondary); font-weight: 500; }
+        .res-line span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+        
+        .insurance-block { background: #f8f9fa; padding: 14px; border-radius: var(--radius-sm); margin-top: 15px; margin-bottom: 0; border: 1px solid #f0f0f0; }
+        .res-line.total { border-top: 2px dashed #eee; margin-top: 20px; padding-top: 20px; flex-direction: column; align-items: flex-start; gap: 6px; }
+        .total-label { font-size: 15px; font-weight: 600; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; }
+        .big-price { font-size: 34px; font-weight: 700; color: var(--accent); letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
+        
+        .limit-warning { background: var(--danger-bg); color: var(--danger); padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; margin-top: 12px; display: none; align-items: center; gap: 8px; }
+
+        @media (max-width: 950px) { .app-container { grid-template-columns: 1fr; gap: 20px; } .results-sidebar { position: static; } }
+        @media (max-width: 600px) {
+            body { padding: 10px; } .glass-panel, .receipt-card { padding: 20px; } .switches-grid { grid-template-columns: 1fr; gap: 10px; } .input-group { grid-template-columns: 1fr; }
+            .stone-inputs { grid-template-columns: 1fr 1fr; }
+            .stone-inputs .s-t, .stone-inputs .s-shape { grid-column: 1 / -1; }
+            
+            /* Адаптация сетки камней для мобильных */
+            .stone-row[data-shape="krug"] .s-l, .stone-row[data-shape="shar"] .s-l { grid-column: 1 / -1; }
+            .stone-row[data-shape="kvadrat"] .s-l { grid-column: 1 / -1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="glass-panel">
+        <h1>Параметры изделия</h1>
+
+        <div class="switches-grid">
+            <div class="switch-item">
+                <div class="switch-info"><div>Пустотелое</div><span>Вычет -5%</span></div>
+                <label class="switch"><input type="checkbox" id="isHollow"><span class="slider"></span></label>
+            </div>
+            <div class="switch-item">
+                <div class="switch-info"><div>Страховка</div><span id="ins-status" style="color: #34c759;">Включена (База)</span></div>
+                <label class="switch"><input type="checkbox" id="isInsured" checked><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="section">
+            <span class="section-title">Тип и вес</span>
+            <div class="radio-group" id="itemTypeGroup">
+                <label class="radio-label"><input type="radio" name="itemType" value="0.1" checked><span class="radio-btn">Кольцо</span></label>
+                <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn">Серьги</span></label>
+                <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn">Подвес</span></label>
+                <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn">Браслет</span></label>
+                <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn">Цепь</span></label>
+            </div>
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <label>Общий вес (г)</label>
+                    <input type="number" id="totalWeight" class="glass-input" placeholder="0.000" step="0.001">
+                </div>
+                <div class="input-wrapper">
+                    <label>Чистый вес золота (г)</label>
+                    <input type="text" id="netWeight" class="glass-input" value="0.000" disabled>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <span class="section-title">Вставки</span>
+            <div id="stones-container" class="stones-container"></div>
+            <button class="btn-add" id="btnAddStone">+ Добавить камень</button>
+        </div>
+
+        <div class="section">
+            <span class="section-title">Проба золота</span>
+            <div class="radio-group" id="purity-group">
+                <label class="radio-label"><input type="radio" name="purity" value="375"><span class="radio-btn">375</span></label>
+                <label class="radio-label"><input type="radio" name="purity" value="500"><span class="radio-btn">500</span></label>
+                <label class="radio-label"><input type="radio" name="purity" value="583"><span class="radio-btn">583</span></label>
+                <label class="radio-label"><input type="radio" name="purity" value="585" checked><span class="radio-btn">585</span></label>
+                <label class="radio-label"><input type="radio" name="purity" value="750"><span class="radio-btn">750</span></label>
+                <label class="radio-label"><input type="radio" name="purity" value="999"><span class="radio-btn">999</span></label>
+            </div>
+        </div>
+
+        <div class="section" style="margin-bottom: 0;">
+            <span class="section-title">Тариф за грамм (Залог)</span>
+            <div class="radio-group" id="price-group">
+                <label class="radio-label"><input type="radio" name="price" value="5000" checked><span class="radio-btn">5 000 ₽</span></label>
+                <label class="radio-label"><input type="radio" name="price" value="6000"><span class="radio-btn">6 000 ₽</span></label>
+                <label class="radio-label"><input type="radio" name="price" value="7000" id="btn7000"><span class="radio-btn" id="lbl7000">7 000 ₽</span></label>
+            </div>
+            <div id="limitMsg" class="limit-warning">⚠ Тариф 7000 ₽ заблокирован: лимит 150 000 ₽ превышен.</div>
+        </div>
+    </div>
+
+    <div class="results-sidebar">
+        <div class="receipt-card">
+            <h2>Расчетный лист</h2>
+            
+            <div id="cart-container" class="cart-container">
+                <div class="cart-header">Детализация веса</div>
+                <div id="cart-items"></div>
+                <div class="cart-total">
+                    <span>Чистый вес золота:</span>
+                    <span id="cart-net-weight">0.000 г</span>
+                </div>
+            </div>
+
+            <div class="res-line"><span>Тариф (585 проба):</span><span id="res-base-price">0 ₽</span></div>
+            <div class="res-line"><span>Цена пересчета (<span id="res-purity-label">585</span>):</span><span id="res-actual-price">0 ₽</span></div>
+            
+            <div id="insurance-blocks" class="insurance-block">
+                <div class="res-line">
+                    <span style="color: var(--text-main); font-weight: 600;">На руки клиенту:</span>
+                    <span id="res-hand" style="font-size: 16px; color: var(--accent);">0 ₽</span>
+                </div>
+                <div class="res-line" style="margin-top: 10px;">
+                    <span>Страховка (23.76%):</span>
+                    <span id="res-ins">0 ₽</span>
+                </div>
+            </div>
+
+            <div class="res-line total">
+                <span id="total-label" class="total-label">Сумма займа:</span>
+                <span id="res-total" class="big-price">0 ₽</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const stoneCoeffs = {
+        'krug':0.0135, 'baget':0.02175, 'grusha':0.013125, 'kvadrat':0.01725, 
+        'markiz':0.012, 'oval':0.015, 'oktagon':0.018375, 'serdtse':0.01575, 
+        'treugolnik':0.0135, 'trillion':0.01275, 'shar':0.019425
+    };
+    
+    function calculate() {
+        const totalW = parseFloat(document.getElementById('totalWeight').value) || 0;
+        const isHollow = document.getElementById('isHollow').checked;
+        const isInsured = document.getElementById('isInsured').checked;
+        const itemTypeRadio = document.querySelector('input[name="itemType"]:checked');
+        const itemDeduct = parseFloat(itemTypeRadio.value);
+        
+        let stoneWeightCt = 0;
+        let cartItemsHTML = '';
+
+        if (totalW > 0) {
+            if (itemDeduct === 0.1) {
+                cartItemsHTML += `<div class="cart-item deduction"><span>Загрязнение х 1</span><span>-0.100 г</span></div>`;
+            } else if (itemDeduct === 0.15) {
+                cartItemsHTML += `<div class="cart-item deduction"><span>Загрязнение х 1</span><span>-0.100 г</span></div>`;
+                cartItemsHTML += `<div class="cart-item deduction"><span>Замок х 1</span><span>-0.050 г</span></div>`;
+            }
+        }
+
+        document.querySelectorAll('.stone-row').forEach(row => {
+            const sTypeSelect = row.querySelector('.s-t');
+            const sShapeSelect = row.querySelector('.s-shape');
+            const summaryTextEl = row.querySelector('.summary-text');
+            
+            const shape = sShapeSelect.value;
+            const typeText = sTypeSelect.options[sTypeSelect.selectedIndex].text;
+            const shapeText = sShapeSelect.options[sShapeSelect.selectedIndex].text;
+            
+            const l = parseFloat(row.querySelector('.s-l').value) || 0;
+            const w = parseFloat(row.querySelector('.s-w').value) || l;
+            const h = parseFloat(row.querySelector('.s-h').value) || (w * 0.6);
+            const qty = parseInt(row.querySelector('.s-q').value) || 1;
+            const type = sTypeSelect.value;
+            
+            if (l > 0) {
+                let ct = l * w * h * (stoneCoeffs[shape] || 0.0135);
+                if(type === 'diamond') ct *= (0.0037 / 0.0081);
+                
+                let ctTotal = ct * qty;
+                stoneWeightCt += ctTotal;
+                let gramTotal = ctTotal * 0.2;
+                
+                let dimsText = "";
+                const hInputVal = row.querySelector('.s-h').value;
+
+                if (shape === 'krug' || shape === 'shar') {
+                    dimsText = `Ø${l}`;
+                    // Если высота скрыта (нет ручного ввода), она не отображается в чеке
+                } else if (shape === 'kvadrat') {
+                    dimsText = `${l}x${l}`;
+                    if (hInputVal !== "") dimsText += `x${hInputVal}`;
+                    else dimsText += `x${h.toFixed(1)}`;
+                } else {
+                    dimsText = `${l}x${w}`;
+                    if (hInputVal !== "") dimsText += `x${hInputVal}`;
+                    else dimsText += `x${h.toFixed(1)}`;
+                }
+                
+                cartItemsHTML += `<div class="cart-item deduction"><span>${typeText} ${shapeText} ${dimsText} мм х ${qty} шт</span><span>-${gramTotal.toFixed(3)} г</span></div>`;
+                
+                summaryTextEl.innerHTML = `
+                    <b style="color:var(--accent);">${typeText} ${shapeText}</b> 
+                    <span style="background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 12px; font-size:12px;">${qty} шт.</span> 
+                    <span style="margin-left:auto;"><b style="color:var(--danger);">-${gramTotal.toFixed(3)} г</b> <span style="color:var(--text-secondary); font-size:11px; margin-left:4px;">(${ctTotal.toFixed(3)} ct)</span></span>
+                `;
+            } else {
+                summaryTextEl.innerHTML = `<span style="color:var(--text-secondary);">Вставка (нажмите для ввода)</span>`;
+            }
+        });
+
+        const stonesG = stoneWeightCt * 0.2;
+        const hollowD = isHollow ? (totalW * 0.05) : 0;
+        const heavyD = totalW > 20 ? (totalW * 0.005) : 0;
+        
+        if (totalW > 0) {
+            if (isHollow) cartItemsHTML += `<div class="cart-item deduction"><span>Пустотелость (5%)</span><span>-${hollowD.toFixed(3)} г</span></div>`;
+            if (heavyD > 0) cartItemsHTML += `<div class="cart-item deduction"><span>Свыше 20г (0.5%)</span><span>-${heavyD.toFixed(3)} г</span></div>`;
+        }
+
+        let netW = 0;
+        if (totalW > 0) {
+            netW = Math.max(0, totalW - itemDeduct - stonesG - hollowD - heavyD);
+            document.getElementById('cart-container').style.display = 'block';
+            document.getElementById('cart-items').innerHTML = cartItemsHTML;
+            document.getElementById('cart-net-weight').innerText = `${netW.toFixed(3)} г`;
+        } else {
+            document.getElementById('cart-container').style.display = 'none';
+        }
+        
+        document.getElementById('netWeight').value = netW.toFixed(3);
+
+        const purity = parseFloat(document.querySelector('input[name="purity"]:checked').value);
+        document.getElementById('res-purity-label').innerText = purity;
+        
+        const btn7000 = document.getElementById('btn7000');
+        const lbl7000 = document.getElementById('lbl7000');
+        const insStatus = document.getElementById('ins-status');
+        
+        if(!isInsured) {
+            lbl7000.innerText = "6 300 ₽";
+            btn7000.value = "6300";
+            insStatus.innerText = "Отключена (Прайс снижен)";
+            insStatus.style.color = "var(--danger)";
+            document.getElementById('insurance-blocks').style.display = 'none';
+            document.getElementById('total-label').innerText = "К выдаче на руки:";
+        } else {
+            lbl7000.innerText = "7 000 ₽";
+            btn7000.value = "7000";
+            insStatus.innerText = "Включена (Базовый прайс)";
+            insStatus.style.color = "#34c759";
+            document.getElementById('insurance-blocks').style.display = 'block';
+            document.getElementById('total-label').innerText = "Сумма займа:";
+        }
+
+        const checkPrice = isInsured ? 7000 : 6300;
+        const checkActualPrice = Math.round(checkPrice * (purity/585));
+        const checkAmountHand = Math.round(netW * checkActualPrice);
+        
+        if (checkAmountHand > 150000) {
+            btn7000.disabled = true;
+            document.getElementById('limitMsg').style.display = 'flex';
+            if(btn7000.checked) document.querySelector('input[name="price"][value="6000"]').checked = true;
+        } else {
+            btn7000.disabled = false;
+            document.getElementById('limitMsg').style.display = 'none';
+        }
+
+        const basePrice = parseFloat(document.querySelector('input[name="price"]:checked').value);
+        const actualPrice = Math.round(basePrice * (purity / 585));
+        
+        document.getElementById('res-base-price').innerText = basePrice.toLocaleString('ru-RU') + ' ₽';
+        document.getElementById('res-actual-price').innerText = actualPrice.toLocaleString('ru-RU') + ' ₽';
+
+        const amountHand = Math.round(netW * actualPrice);
+        
+        if(isInsured && amountHand > 0) {
+            const insAmount = Math.round(amountHand * 0.2376);
+            const loanTotal = amountHand + insAmount;
+            document.getElementById('res-hand').innerText = amountHand.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('res-ins').innerText = insAmount.toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('res-total').innerText = loanTotal.toLocaleString('ru-RU') + ' ₽';
+        } else {
+            document.getElementById('res-total').innerText = amountHand.toLocaleString('ru-RU') + ' ₽';
+        }
+    }
+
+    document.getElementById('btnAddStone').onclick = () => {
+        document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
+
+        const div = document.createElement('div');
+        div.className = 'stone-row';
+        div.dataset.shape = 'krug'; // По умолчанию круг
+        
+        div.innerHTML = `
+            <div class="stone-content">
+                <div class="stone-inputs">
+                    <select class="glass-input s-t"><option value="fianite">Фианит</option><option value="diamond">Брилл.</option></select>
+                    <select class="glass-input s-shape">
+                        <option value="krug">Круг</option><option value="oval">Овал</option><option value="baget">Багет</option><option value="kvadrat">Квадрат</option>
+                        <option value="markiz">Маркиз</option><option value="grusha">Груша</option><option value="oktagon">Октагон</option><option value="serdtse">Сердце</option>
+                        <option value="treugolnik">Треуг.</option><option value="trillion">Триллион</option><option value="shar">Шар</option>
+                    </select>
+                    <input type="number" class="glass-input s-l" placeholder="Диаметр" step="0.01">
+                    <input type="number" class="glass-input s-w" placeholder="Д2" step="0.01">
+                    <input type="number" class="glass-input s-h" placeholder="Выс" step="0.01" data-auto="true">
+                    <input type="number" class="glass-input s-q" value="1" min="1" placeholder="Шт">
+                </div>
+                <div class="stone-summary">
+                    <div class="summary-text">Вставка (нажмите для ввода)</div>
+                </div>
+            </div>
+            <button class="btn-remove" title="Удалить камень">×</button>
+        `;
+        
+        const sShape = div.querySelector('.s-shape');
+        const lInput = div.querySelector('.s-l');
+        const wInput = div.querySelector('.s-w');
+        const hInput = div.querySelector('.s-h');
+
+        const updateShapeUI = () => {
+            const shape = sShape.value;
+            div.dataset.shape = shape; // Передаем класс в CSS для скрытия полей
+            
+            if (shape === 'krug' || shape === 'shar') {
+                lInput.placeholder = "Диаметр";
+                wInput.value = ""; 
+                hInput.value = ""; // Очищаем высоту принудительно, включится авторасчет
+            } else if (shape === 'kvadrat') {
+                lInput.placeholder = "Сторона";
+                wInput.value = ""; 
+            } else {
+                lInput.placeholder = "Д1";
+            }
+            updateHeightAndCalc();
+        };
+
+        const updateHeightAndCalc = () => {
+            let l = parseFloat(lInput.value) || 0;
+            let w = parseFloat(wInput.value) || l;
+            
+            if (l > 0 && hInput.dataset.auto === "true") {
+                hInput.value = (w * 0.6).toFixed(2);
+            } else if (l === 0 && w === 0 && hInput.dataset.auto === "true") {
+                hInput.value = "";
+            }
+            calculate();
+        };
+
+        sShape.addEventListener('change', updateShapeUI);
+        lInput.oninput = updateHeightAndCalc;
+        wInput.oninput = updateHeightAndCalc;
+
+        hInput.oninput = () => {
+            if (hInput.value === '') {
+                hInput.dataset.auto = "true";
+                updateHeightAndCalc();
+            } else {
+                hInput.dataset.auto = "false";
+                calculate();
+            }
+        };
+
+        div.querySelector('.btn-remove').onclick = () => { div.remove(); calculate(); };
+        div.querySelectorAll('select, .s-q').forEach(el => el.addEventListener('input', calculate));
+        
+        document.getElementById('stones-container').appendChild(div);
+    };
+
+    document.addEventListener('click', (e) => {
+        const clickedSummary = e.target.closest('.stone-summary');
+        
+        if (clickedSummary) {
+            const rowToExpand = clickedSummary.closest('.stone-row');
+            document.querySelectorAll('.stone-row').forEach(r => {
+                if (r !== rowToExpand) r.classList.add('collapsed');
+            });
+            rowToExpand.classList.remove('collapsed');
+            return;
+        }
+
+        const clickedInsideRow = e.target.closest('.stone-row');
+        const clickedAddBtn = e.target.closest('#btnAddStone');
+        const clickedRemoveBtn = e.target.closest('.btn-remove');
+        
+        if (!clickedInsideRow && !clickedAddBtn && !clickedRemoveBtn) {
+            document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
+        }
+    });
+
+    document.querySelectorAll('#totalWeight').forEach(el => el.oninput = calculate);
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => el.onchange = calculate);
+    
+    // Инициализация пустого состояния
+    calculate();
+</script>
+
+</body>
+</html>
