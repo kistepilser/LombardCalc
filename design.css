@@ -3,7 +3,6 @@
                    radial-gradient(circle at 85% 30%, #e2eafc, rgba(255,255,255,0)), #f8f9fc;
     --glass-bg: rgba(255, 255, 255, 0.45);
     --glass-border: rgba(255, 255, 255, 0.8);
-    --glass-highlight: rgba(255, 255, 255, 1);
     --glass-shadow: 0 40px 80px rgba(0, 0, 0, 0.07), 0 10px 20px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1), inset 0 -1px 2px rgba(255, 255, 255, 0.3);
     --text-main: #1d1d1f; --text-secondary: #86868b;
     --accent: #0071e3; --margin-color: #8b5cf6;
@@ -12,11 +11,10 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
-
 body { min-height: 100vh; display: flex; justify-content: center; padding: 40px 20px; color: var(--text-main); position: relative; overflow-x: hidden; }
 
-/* Фон Видео */
-.video-bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; }
+/* Видео фон */
+.video-bg-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; background: linear-gradient(135deg, #f0f4fd, #e2eafc); }
 #bg-video { width: 100%; height: 100%; object-fit: cover; filter: saturate(120%) contrast(110%); }
 .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.35); backdrop-filter: blur(40px) saturate(180%); }
 
@@ -28,9 +26,9 @@ h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 3
 .section { margin-bottom: 25px; }
 .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 15px; display: block; }
 
-/* Switches Apple Style */
+/* Тумблеры */
 .switches-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 25px; }
-.switch-item { display: flex; flex-direction: column; justify-content: center; background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,1); box-shadow: 0 8px 20px rgba(0,0,0,0.03); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+.switch-item { display: flex; flex-direction: column; justify-content: center; background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 100%); padding: 16px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,1); box-shadow: 0 8px 20px rgba(0,0,0,0.03); transition: 0.3s; }
 .switch-info div { font-size: 14px; font-weight: 700; }
 .switch-info span { font-size: 11px; color: var(--text-secondary); display: block; margin-top: 4px; }
 .switch { position: relative; width: 50px; height: 30px; }
@@ -41,7 +39,10 @@ input:checked + .slider { background-color: #34c759; }
 input:checked + .slider.op-slider { background-color: var(--accent); }
 input:checked + .slider:before { transform: translateX(20px); }
 
-/* Buttons */
+/* Кнопки */
+.radio-group { display: flex; flex-wrap: wrap; gap: 10px; }
+.radio-label { flex: 1; min-width: 70px; cursor: pointer; }
+.radio-label input { display: none; }
 .radio-btn { display: flex; justify-content: center; align-items: center; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; transition: 0.3s; padding: 0 10px; height: 48px; background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 100%); border: 1px solid rgba(255,255,255,1); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
 .radio-btn.double { flex-direction: column; height: 62px; padding: 6px; }
 .calc-val { transition: 0.2s; }
@@ -49,92 +50,120 @@ input:checked + .slider:before { transform: translateX(20px); }
 input:checked + .radio-btn { background: #fff; border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,113,227,0.18), 0 0 0 2px var(--accent); transform: translateY(-2px); }
 input:checked + .radio-btn .calc-val { color: var(--accent); }
 
-/* Inputs */
+/* Поля ввода */
+.input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+.input-wrapper { display: flex; flex-direction: column; gap: 8px; }
+.input-wrapper label { font-size: 12px; font-weight: 600; color: var(--text-secondary); padding-left: 4px; }
 .liquid-input { width: 100%; padding: 15px 16px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.7); background: rgba(255,255,255,0.4); font-size: 15px; font-weight: 600; outline: none; transition: 0.3s; }
 .liquid-input:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,113,227,0.15); }
 
-/* --- ОБНОВЛЕННЫЕ ВСТАВКИ (КАМНИ) --- */
-
+/* --- ВСТАВКИ И СЕТКА --- */
+.stones-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
 .stone-row { 
-    display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.5); 
+    display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.6); 
     padding: 12px; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,1); 
-    margin-bottom: 10px; transition: 0.3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03); transition: 0.3s;
 }
-
 .stone-content { flex: 1; min-width: 0; }
 
-/* Сетка полей ввода: меню гибкие, цифры фиксированные */
+/* Базовая сетка для Десктопа */
 .stone-inputs { 
-    display: flex; 
-    gap: 8px; 
-    align-items: center; 
-    flex-wrap: nowrap;
+    display: grid; 
+    grid-template-columns: 1.5fr 1.5fr 60px 60px 60px 50px; 
+    gap: 8px; align-items: center; 
 }
 
-/* Выпадающие списки (Камень и Огранка) - КРУПНЫЕ */
-.custom-select { 
-    flex: 2; /* Занимают основное место */
-    min-width: 130px; 
-    position: relative;
-}
+.custom-select { position: relative; width: 100%; min-width: 0; }
+.select-trigger { display: flex; align-items: center; justify-content: space-between; padding: 0 10px; height: 42px; background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.trig-content { display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 
-.select-trigger { 
-    display: flex; align-items: center; justify-content: space-between; padding: 0 10px; height: 42px; 
-    background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: 12px; 
-    font-size: 13px; font-weight: 700; cursor: pointer;
-}
-.trig-content { display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.trig-content svg { width: 16px; height: 16px; flex-shrink: 0; }
+/* Жесткие рамки для SVG, чтобы не плыли */
+.trig-content svg, .select-option svg, .summary-icon svg { width: 16px !important; height: 16px !important; flex-shrink: 0; }
+.arrow-icon { width: 12px !important; height: 12px !important; opacity: 0.5; }
 
-/* Поля цифр - МАЛЕНЬКИЕ И СИММЕТРИЧНЫЕ */
-.stone-inputs .glass-input { 
-    width: 60px; /* Фиксированная ширина для Д1, Д2, Выс */
-    flex-shrink: 0; 
-    height: 42px; 
-    text-align: center; 
-    padding: 0 4px; 
-    font-size: 13px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.8);
-    border: 1px solid rgba(0,0,0,0.05);
-}
-
-/* Поле количества - ЕЩЕ МЕНЬШЕ */
-.stone-inputs .s-q { 
-    width: 48px !important; 
-    background: rgba(0,113,227,0.05) !important; 
-    color: var(--accent);
-}
-
-/* Если выбрана Эмаль или Жемчуг (через JS скрываются поля), меню расширятся сами */
-
-.select-options { position: absolute; top: calc(100% + 5px); left: 0; width: 180px; max-height: 250px; overflow-y: auto; background: #fff; border-radius: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); z-index: 100; opacity: 0; visibility: hidden; transition: 0.2s; }
+.select-options { position: absolute; top: calc(100% + 5px); left: 0; width: 100%; min-width: 140px; max-height: 250px; overflow-y: auto; background: #fff; border-radius: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.15); z-index: 100; opacity: 0; visibility: hidden; transition: 0.2s; border: 1px solid rgba(0,0,0,0.05);}
 .custom-select.open .select-options { opacity: 1; visibility: visible; }
-.select-option { display: flex; align-items: center; gap: 10px; padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.select-option { display: flex; align-items: center; gap: 8px; padding: 12px; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.03); }
 .select-option:hover { background: var(--accent); color: #fff; }
 
-.stone-summary { display: none; cursor: pointer; padding: 10px; width: 100%; justify-content: space-between; align-items: center; }
-.stone-row.collapsed .stone-inputs { display: none; }
-.stone-row.collapsed .stone-summary { display: flex; }
+.stone-inputs .glass-input { width: 100%; height: 42px; text-align: center; padding: 0 4px; font-size: 13px; font-weight: 600; border-radius: 12px; background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.05); outline: none; }
+.stone-inputs .glass-input:focus { border-color: var(--accent); background: #fff; }
+.stone-inputs .glass-input:disabled { background: rgba(0,0,0,0.02); color: var(--accent); }
+.stone-inputs .s-q { background: rgba(0,113,227,0.05); color: var(--accent); }
 
-.btn-remove { width: 42px; height: 42px; background: var(--danger-bg); color: var(--danger); border: none; border-radius: 14px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
+/* Логика скрытия полей на ПК */
+.stone-row[data-shape="krug"] .s-w, .stone-row[data-shape="krug"] .s-h, .stone-row[data-shape="shar"] .s-w, .stone-row[data-shape="shar"] .s-h { display: none; }
+.stone-row[data-shape="kvadrat"] .s-w { display: none; }
+.stone-row[data-type="enamel"] .s-shape-wrap, .stone-row[data-type="pearl"] .s-shape-wrap, .stone-row[data-type="amber"] .s-shape-wrap { display: none; }
+
+/* Динамические объединения колонок ПК */
+@media (min-width: 601px) {
+    .stone-row[data-shape="krug"] .s-l, .stone-row[data-shape="shar"] .s-l { grid-column: span 3; }
+    .stone-row[data-shape="kvadrat"] .s-l { grid-column: span 2; }
+    .stone-row[data-type="enamel"] .s-t-wrap, .stone-row[data-type="pearl"] .s-t-wrap, .stone-row[data-type="amber"] .s-t-wrap { grid-column: span 2; }
+    .stone-row[data-type="enamel"] .s-l, .stone-row[data-type="pearl"] .s-l { grid-column: span 3; }
+}
+
+.stone-row.collapsed .stone-inputs { display: none; }
+.stone-summary { display: none; cursor: pointer; padding: 8px 4px; width: 100%; justify-content: space-between; align-items: center; }
+.stone-row.collapsed .stone-summary { display: flex; }
+.summary-text { font-size: 14px; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 10px; width: 100%; }
+.summary-icon { color: var(--accent); display: flex; }
+.badge-qty { background: rgba(0,0,0,0.06); padding: 3px 10px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700;}
+
+.btn-remove { width: 42px; height: 42px; background: var(--danger-bg); color: var(--danger); border: none; border-radius: 12px; cursor: pointer; font-size: 20px; flex-shrink: 0; }
+.btn-liquid { width: 100%; padding: 16px; border: none; border-radius: var(--radius-sm); background: rgba(0,113,227,0.1); color: var(--accent); font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.3s; margin-top: 5px; }
 
 /* Чек */
 .results-sidebar { position: sticky; top: 40px; }
 .receipt-card { padding: 30px; }
 .receipt-card h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
-
 .cart-container { background: rgba(255,255,255,0.5); border-radius: 20px; padding: 20px; margin-bottom: 20px; display: none; border: 1px solid #fff; }
 .cart-item { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
-.cart-total { border-top: 1px dashed #ccc; margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; font-weight: 800; }
+.cart-item span:last-child { color: var(--danger); font-variant-numeric: tabular-nums; }
+.cart-total { border-top: 1px dashed rgba(0,0,0,0.15); margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; font-weight: 800; }
+.res-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 14px; font-weight: 600;}
+.res-line.total { border-top: 2px dashed rgba(0,0,0,0.1); margin-top: 20px; padding-top: 20px; flex-direction: column; align-items: flex-start; gap: 8px; }
+.big-price { font-size: 40px; font-weight: 900; color: var(--accent); letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
 
-.big-price { font-size: 40px; font-weight: 900; color: var(--accent); letter-spacing: -1.5px; }
-.margin-block { background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 20px; margin-top: 20px; display: none; border: 1px solid rgba(139, 92, 246, 0.2); }
+.limit-warning { background: var(--danger-bg); color: var(--danger); padding: 14px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; margin-top: 15px; display: none; }
+.margin-block { background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 20px; margin-top: 20px; display: none; }
+.interest-block { background: rgba(255,255,255,0.6); border: 1px solid #fff; border-radius: 20px; margin-top: 20px; overflow: hidden; display: none; }
+.interest-header { padding: 20px; cursor: pointer; font-size: 14px; font-weight: 800; display: flex; justify-content: space-between; }
+.interest-header svg { width: 18px; height: 18px; transition: 0.3s; }
+.interest-header.open svg { transform: rotate(180deg); }
+.interest-content { display: none; padding: 0 20px 20px; }
+.interest-header.open + .interest-content { display: block; }
+.date-input { height: 46px; font-weight: 700; cursor: pointer; }
 
-/* Адаптация под мобильные */
+/* --- ИДЕАЛЬНАЯ МОБИЛЬНАЯ АДАПТАЦИЯ ДЛЯ ВСТАВОК --- */
 @media (max-width: 950px) { .app-container { grid-template-columns: 1fr; } .results-sidebar { position: static; } }
 @media (max-width: 600px) {
-    .stone-inputs { flex-wrap: wrap; }
-    .custom-select { flex: 1 1 100%; }
-    .stone-inputs .glass-input { flex: 1; }
+    body { padding: 15px 10px; } 
+    .liquid-panel { padding: 20px; border-radius: 30px; }
+    .switches-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    
+    /* Сетка камней на телефоне: Меню сверху, цифры в один ряд снизу */
+    .stone-inputs { 
+        grid-template-columns: 1fr 1fr 1fr 60px; /* 3 поля равных + 60px для шт */
+        grid-template-rows: auto auto; /* 2 строки */
+    }
+    
+    /* Меню занимают всю первую строку пополам */
+    .s-t-wrap { grid-column: 1 / 3; }
+    .s-shape-wrap { grid-column: 3 / 5; }
+    
+    /* Сброс спанов от десктопа */
+    .stone-row[data-shape="krug"] .s-l, .stone-row[data-shape="shar"] .s-l { grid-column: 1 / 4 !important; }
+    .stone-row[data-shape="kvadrat"] .s-l { grid-column: 1 / 3 !important; }
+    
+    .stone-row[data-type="enamel"] .s-t-wrap, 
+    .stone-row[data-type="pearl"] .s-t-wrap, 
+    .stone-row[data-type="amber"] .s-t-wrap { grid-column: 1 / -1 !important; }
+    
+    .stone-row[data-type="enamel"] .s-l, 
+    .stone-row[data-type="pearl"] .s-l { grid-column: 1 / 4 !important; }
+
+    /* Поле количества всегда прижато вправо */
+    .stone-inputs .s-q { grid-column: 4 / 5 !important; }
 }
