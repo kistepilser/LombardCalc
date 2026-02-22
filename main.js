@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- ЖЕСТКО ЗАДАННЫЕ SVG (С fill и stroke для защиты от почернения) ---
     const SVGS = {
         arrow: `<svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
         types: {
@@ -34,25 +33,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const BASE_SELLING_PRICE = 6500; 
     let currentLoanTotal = 0; 
 
+    // --- КАЛЕНДАРЬ ---
     const targetDateInput = document.getElementById('targetDate');
+    const todayDate = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    
     if (targetDateInput) {
-        const today = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        targetDateInput.min = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+        targetDateInput.min = `${todayDate.getFullYear()}-${pad(todayDate.getMonth()+1)}-${pad(todayDate.getDate())}`;
         const defDate = new Date(); defDate.setDate(defDate.getDate() + 31);
         targetDateInput.value = `${defDate.getFullYear()}-${pad(defDate.getMonth()+1)}-${pad(defDate.getDate())}`;
     }
 
-    // --- ЕДИНЫЙ РАСЧЕТ ВСЕГО ---
+    // --- РАСЧЕТ ---
     function calculate() {
-        const totalW = parseFloat(document.getElementById('totalWeight').value) || 0;
+        const totalWeightEl = document.getElementById('totalWeight');
+        const totalW = totalWeightEl ? (parseFloat(totalWeightEl.value) || 0) : 0;
         const isHollow = document.getElementById('isHollow').checked;
         const isBuyout = document.getElementById('isBuyout').checked; 
         const insSwitch = document.getElementById('isInsured');
-        const purity = parseFloat(document.querySelector('input[name="purity"]:checked').value);
-        const itemDeduct = parseFloat(document.querySelector('input[name="itemType"]:checked').value);
+        const purityChecked = document.querySelector('input[name="purity"]:checked');
+        const purity = purityChecked ? parseFloat(purityChecked.value) : 585;
+        const itemTypeChecked = document.querySelector('input[name="itemType"]:checked');
+        const itemDeduct = itemTypeChecked ? parseFloat(itemTypeChecked.value) : 0;
 
-        // 1. Управление логикой Скупка/Залог
+        // 1. Тумблеры
         if (isBuyout) {
             document.getElementById('op-status').innerText = "Скупка";
             document.getElementById('price-group-zalog').style.display = 'none';
@@ -72,7 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('ins-status').innerText = insSwitch.checked ? "Включена" : "Отключена";
         }
 
-        // 2. Обновление цен на кнопках при смене пробы
+        const isInsured = insSwitch.checked;
+
+        // 2. Цены кнопок
         document.querySelectorAll('.radio-label input[name^="price_"]').forEach(radio => {
             const base = parseFloat(radio.value);
             const calc = Math.round(base * (purity / 585));
@@ -83,21 +89,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 3. Вычеты и Корзина (Единый цикл)
-        let stonesGramsTotal = 0;
-        let cartHTML = '';
+        // 3. Вычеты (ЧЕК С ТОЧЕЧКАМИ)
+        let stonesGramsTotal = 0; let cartHTML = '';
 
         if (totalW > 0) {
-            cartHTML += `<div class="cart-item"><span>Грязь/Замок</span><span>-${itemDeduct.toFixed(3)} г</span></div>`;
+            // Разделяем Грязь и Замок, рисуем пунктиры
+            if (itemDeduct === 0.1) {
+                cartHTML += `<div class="cart-item"><span class="item-name">Загрязнение х1</span><span class="dots"></span><span class="item-val">-0.100 г</span></div>`;
+            } else if (itemDeduct === 0.15) {
+                cartHTML += `<div class="cart-item"><span class="item-name">Загрязнение х1</span><span class="dots"></span><span class="item-val">-0.100 г</span></div>`;
+                cartHTML += `<div class="cart-item"><span class="item-name">Замок х1</span><span class="dots"></span><span class="item-val">-0.050 г</span></div>`;
+            }
             
             document.querySelectorAll('.stone-row').forEach(row => {
                 const type = row.querySelector('.val-t').value;
                 const shape = row.querySelector('.val-shape').value;
+                const summaryTextEl = row.querySelector('.summary-text');
+                
                 const L = parseFloat(row.querySelector('.s-l').value) || 0;
                 const W = parseFloat(row.querySelector('.s-w').value) || L;
                 const H = parseFloat(row.querySelector('.s-h').value) || (W * 0.6);
                 const Q = parseInt(row.querySelector('.s-q').value) || 1;
                 
+                let iconSVG = SVGS.types[type] || SVGS.types.fianite;
+                if(type !== 'enamel' && type !== 'pearl' && type !== 'amber') {
+                    iconSVG = SVGS.shapes[shape] || iconSVG;
+                }
+
                 if (L > 0) {
                     let gram = 0; let ct = 0;
                     if (type === 'enamel') {
@@ -114,24 +132,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     stonesGramsTotal += gram;
                     
-                    // Обновляем бейдж свернутого камня
-                    const sIcon = row.querySelector('.summary-icon');
-                    const sText = row.querySelector('.summary-text');
-                    sIcon.innerHTML = SVGS.types[type];
                     const displayName = SVGS.names[type] + (type==='enamel'||type==='pearl'||type==='amber' ? '' : ' ' + SVGS.names[shape]);
-                    sText.innerHTML = `<span style="color:var(--text-main);">${displayName}</span> <span class="badge-qty">${Q} шт</span> <span style="margin-left:auto;"><b style="color:var(--danger);">-${gram.toFixed(3)} г</b></span>`;
                     
-                    cartHTML += `<div class="cart-item"><span>${displayName} x${Q}</span><span>-${gram.toFixed(3)} г</span></div>`;
+                    // Обновляем бейдж (свернутый вид)
+                    summaryTextEl.innerHTML = `
+                        <span class="summary-icon">${iconSVG}</span>
+                        <span style="color:var(--text-main); margin-left:2px;">${displayName}</span>
+                        <span class="badge-qty">${Q} шт</span>
+                        <div class="summary-result">
+                            <b style="color:var(--danger);">-${gram.toFixed(3)} г</b>
+                            ${ct > 0 ? `<span style="color:var(--text-secondary); font-size:11px;">(${ct.toFixed(2)} ct)</span>` : ''}
+                        </div>
+                    `;
+                    
+                    cartHTML += `<div class="cart-item"><span class="item-name">${displayName} x${Q}</span><span class="dots"></span><span class="item-val">-${gram.toFixed(3)} г</span></div>`;
+                } else {
+                    summaryTextEl.innerHTML = `
+                        <span class="summary-icon">${iconSVG}</span>
+                        <span style="margin-left:8px; color:var(--text-secondary);">Вставка (нажмите для ввода)</span>
+                    `;
                 }
             });
 
             if (isHollow) {
                 const hd = totalW * 0.05; stonesGramsTotal += hd;
-                cartHTML += `<div class="cart-item"><span>Пустотелость (5%)</span><span>-${hd.toFixed(3)} г</span></div>`;
+                cartHTML += `<div class="cart-item"><span class="item-name">Пустотелость (5%)</span><span class="dots"></span><span class="item-val">-${hd.toFixed(3)} г</span></div>`;
             }
             if (totalW > 20) {
                 const hv = totalW * 0.005; stonesGramsTotal += hv;
-                cartHTML += `<div class="cart-item"><span>Свыше 20г (0.5%)</span><span>-${hv.toFixed(3)} г</span></div>`;
+                cartHTML += `<div class="cart-item"><span class="item-name">Свыше 20г (0.5%)</span><span class="dots"></span><span class="item-val">-${hv.toFixed(3)} г</span></div>`;
             }
         }
 
@@ -147,23 +176,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 4. Расчет Денег
-        const isInsured = insSwitch.checked;
         const btn7000 = document.getElementById('btn7000');
         let selectedBase = 0;
         
         if (isBuyout) {
             selectedBase = parseFloat(document.querySelector('input[name="price_skupka"]:checked').value);
             document.getElementById('limitMsg').style.display = 'none';
-            btn7000.disabled = false;
+            if(btn7000) btn7000.disabled = false;
         } else {
             const checkPrice = isInsured ? 7000 : 6300;
             const checkTotal = Math.round(netW * Math.round(checkPrice * (purity/585)));
             if (checkTotal > 150000) {
-                btn7000.disabled = true;
+                if(btn7000) btn7000.disabled = true;
                 document.getElementById('limitMsg').style.display = 'flex';
-                if (btn7000.checked) document.querySelector('input[name="price_zalog"][value="6000"]').checked = true;
+                if (btn7000 && btn7000.checked) {
+                    const btn6k = document.querySelector('input[name="price_zalog"][value="6000"]');
+                    if(btn6k) btn6k.checked = true;
+                }
             } else {
-                btn7000.disabled = false;
+                if(btn7000) btn7000.disabled = false;
                 document.getElementById('limitMsg').style.display = 'none';
             }
             selectedBase = parseFloat(document.querySelector('input[name="price_zalog"]:checked').value);
@@ -199,13 +230,25 @@ document.addEventListener('DOMContentLoaded', () => {
         updateInterest();
     }
 
-    // --- ПРОЦЕНТЫ ---
+    // --- РАСЧЕТ ПРОЦЕНТОВ ---
     function updateInterest() {
-        if (document.getElementById('isBuyout').checked || currentLoanTotal === 0 || !targetDateInput) return;
+        if (document.getElementById('isBuyout').checked || currentLoanTotal === 0 || !targetDateInput) {
+            document.getElementById('int-days').innerText = "0";
+            document.getElementById('int-percent').innerText = "0.000%";
+            document.getElementById('int-sum').innerText = "0 ₽";
+            document.getElementById('int-total-return').innerText = "0 ₽";
+            return;
+        }
         
+        // Исправленная математика дат
         const tDate = new Date(targetDateInput.value);
-        const diff = Math.ceil((tDate - new Date().setHours(0,0,0,0)) / 86400000) + 1;
-        let days = Math.max(1, diff);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        tDate.setHours(0,0,0,0);
+
+        const diffTime = tDate.getTime() - today.getTime();
+        let days = Math.floor(diffTime / (1000 * 3600 * 24)) + 1;
+        if (days < 1) days = 1;
         
         let rate = 0;
         if (days > 1) rate += Math.min(days - 1, 5) * 0.402;
@@ -219,128 +262,119 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('int-total-return').innerText = (currentLoanTotal + sum).toLocaleString('ru-RU') + ' ₽';
     }
 
-    if(targetDateInput) targetDateInput.addEventListener('input', updateInterest);
-
-    // --- УМНОЕ МЕНЮ КАМНЕЙ ---
-    function getShapesForType(type) {
-        if (type === 'diamond') return {'krug': SVGS.shapes['krug']}; // Только круг для бриллианта
-        if (type === 'enamel' || type === 'pearl' || type === 'amber') return {}; 
-        return SVGS.shapes; // Фианит получает всё
-    }
+    if(targetDateInput) targetDateInput.addEventListener('change', calculate);
 
     function buildOptions(dataObj, sourceDict) {
         return Object.keys(dataObj).map(k => `<div class="select-option" data-val="${k}">${dataObj[k]} ${sourceDict[k]}</div>`).join('');
     }
 
-    document.getElementById('btnAddStone').onclick = () => {
-        document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
+    // --- ДОБАВЛЕНИЕ КАМНЯ ---
+    const btnAddStone = document.getElementById('btnAddStone');
+    if(btnAddStone) {
+        btnAddStone.onclick = () => {
+            document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
 
-        const div = document.createElement('div');
-        div.className = 'stone-row';
-        div.dataset.type = 'fianite';
-        div.dataset.shape = 'krug';
-        
-        div.innerHTML = `
-            <div class="stone-content">
-                <div class="stone-inputs">
-                    <div class="custom-select s-t-wrap">
-                        <div class="select-trigger"><div class="trig-content">${SVGS.types.fianite} Фианит</div>${SVGS.arrow}</div>
-                        <div class="select-options">${buildOptions(SVGS.types, SVGS.names)}</div>
-                        <input type="hidden" class="val-t" value="fianite">
+            const div = document.createElement('div');
+            div.className = 'stone-row';
+            div.innerHTML = `
+                <div class="stone-content">
+                    <div class="stone-inputs">
+                        <div class="custom-select s-t-wrap">
+                            <div class="select-trigger"><div class="trig-content">${SVGS.types.fianite} Фианит</div>${SVGS.arrow}</div>
+                            <div class="select-options">${buildOptions(SVGS.types, SVGS.names)}</div>
+                            <input type="hidden" class="val-t" value="fianite">
+                        </div>
+                        <div class="custom-select s-shape-wrap">
+                            <div class="select-trigger"><div class="trig-content">${SVGS.shapes.krug} Круг</div>${SVGS.arrow}</div>
+                            <div class="select-options">${buildOptions(SVGS.shapes, SVGS.names)}</div>
+                            <input type="hidden" class="val-shape" value="krug">
+                        </div>
+                        <input type="number" class="glass-input s-l" placeholder="Ø" step="0.01">
+                        <input type="number" class="glass-input s-w" placeholder="Д2" step="0.01">
+                        <input type="number" class="glass-input s-h" placeholder="Выс" step="0.01" data-auto="true">
+                        <input type="number" class="glass-input s-q" value="1" min="1">
                     </div>
-                    <div class="custom-select s-shape-wrap">
-                        <div class="select-trigger"><div class="trig-content">${SVGS.shapes.krug} Круг</div>${SVGS.arrow}</div>
-                        <div class="select-options">${buildOptions(SVGS.shapes, SVGS.names)}</div>
-                        <input type="hidden" class="val-shape" value="krug">
+                    <div class="stone-summary">
+                        <div class="summary-text"><span class="summary-icon">${SVGS.types.fianite}</span><span style="margin-left:8px; color:var(--text-secondary);">Вставка (нажмите для ввода)</span></div>
                     </div>
-                    <input type="number" class="glass-input s-l" placeholder="Ø" step="0.01">
-                    <input type="number" class="glass-input s-w" placeholder="Д2" step="0.01">
-                    <input type="number" class="glass-input s-h" placeholder="Выс" step="0.01" data-auto="true">
-                    <input type="number" class="glass-input s-q" value="1" min="1">
                 </div>
-                <div class="stone-summary">
-                    <div class="summary-text"><span class="summary-icon">${SVGS.types.fianite}</span> Выберите параметры</div>
-                </div>
-            </div>
-            <button class="btn-remove">×</button>
-        `;
+                <button class="btn-remove" title="Удалить">×</button>
+            `;
 
-        const sTypeWrap = div.querySelector('.s-t-wrap');
-        const sShapeWrap = div.querySelector('.s-shape-wrap');
-        const sType = div.querySelector('.val-t');
-        const sShape = div.querySelector('.val-shape');
-        const lInp = div.querySelector('.s-l');
-        const wInp = div.querySelector('.s-w');
-        const hInp = div.querySelector('.s-h');
+            const typeWrap = div.querySelector('.s-t-wrap');
+            const shapeWrap = div.querySelector('.s-shape-wrap');
+            const sType = div.querySelector('.val-t');
+            const sShape = div.querySelector('.val-shape');
+            const lInp = div.querySelector('.s-l');
+            const wInp = div.querySelector('.s-w');
+            const hInp = div.querySelector('.s-h');
 
-        const updateUI = () => {
-            const t = sType.value; 
-            div.dataset.type = t;
-            
-            // Динамические огранки для Бриллианта
-            if (t === 'diamond') {
-                sShape.value = 'krug';
-                sShapeWrap.querySelector('.trig-content').innerHTML = `${SVGS.shapes.krug} Круг`;
-                sShapeWrap.querySelector('.select-options').innerHTML = buildOptions({'krug': SVGS.shapes.krug}, SVGS.names);
-                reattachSelectEvents(sShapeWrap);
-            } else if (t === 'fianite') {
-                sShapeWrap.querySelector('.select-options').innerHTML = buildOptions(SVGS.shapes, SVGS.names);
-                reattachSelectEvents(sShapeWrap);
+            const updateUI = () => {
+                const t = sType.value; 
+                
+                if (t === 'diamond') {
+                    sShape.value = 'krug';
+                    shapeWrap.querySelector('.trig-content').innerHTML = `${SVGS.shapes.krug} Круг`;
+                    shapeWrap.querySelector('.select-options').innerHTML = buildOptions({'krug': SVGS.shapes.krug}, SVGS.names);
+                    reattachSelectEvents(shapeWrap);
+                } else if (t === 'fianite' || t === 'amber') {
+                    shapeWrap.querySelector('.select-options').innerHTML = buildOptions(SVGS.shapes, SVGS.names);
+                    reattachSelectEvents(shapeWrap);
+                }
+
+                const s = sShape.value;
+                div.dataset.shape = s;
+
+                shapeWrap.style.display = (t==='enamel'||t==='pearl') ? 'none' : 'block';
+                wInp.style.display = (s==='krug'||s==='shar'||s==='kvadrat'||t==='pearl') ? 'none' : 'block';
+                hInp.style.display = (s==='krug'||s==='shar'||t==='pearl') ? 'none' : 'block';
+                
+                if (t==='enamel') { lInp.placeholder="Дл"; wInp.placeholder="Шир"; hInp.placeholder="см²"; hInp.style.display="block"; hInp.disabled=true; }
+                else if (t==='pearl') { lInp.placeholder="Ø"; }
+                else { lInp.placeholder = (s==='krug'||s==='shar') ? 'Ø' : 'Д1'; hInp.disabled=false; }
+                
+                autoCalc();
+            };
+
+            const autoCalc = () => {
+                const t = sType.value; const l = parseFloat(lInp.value)||0; const w = parseFloat(wInp.value)||l;
+                if (t === 'enamel') hInp.value = l > 0 ? (l * w / 100).toFixed(2) : "";
+                else if (t !== 'pearl' && l > 0 && hInp.dataset.auto === "true") hInp.value = (w * 0.6).toFixed(2);
+                else if (l === 0 && w === 0 && hInp.dataset.auto === "true") hInp.value = "";
+                calculate();
+            };
+
+            function reattachSelectEvents(sel) {
+                sel.querySelectorAll('.select-option').forEach(opt => {
+                    opt.onclick = () => {
+                        sel.querySelector('.trig-content').innerHTML = opt.innerHTML;
+                        sel.querySelector('input').value = opt.dataset.val;
+                        sel.classList.remove('open');
+                        updateUI();
+                    };
+                });
             }
 
-            const s = sShape.value;
-            div.dataset.shape = s;
-
-            // Видимость элементов
-            sShapeWrap.style.display = (t==='enamel'||t==='pearl'||t==='amber') ? 'none' : 'block';
-            wInp.style.display = (s==='krug'||s==='shar'||s==='kvadrat'||t==='pearl') ? 'none' : 'block';
-            hInp.style.display = (s==='krug'||s==='shar'||t==='pearl') ? 'none' : 'block';
-            hInp.disabled = false;
-            
-            if (t==='enamel') { lInp.placeholder="Дл"; wInp.placeholder="Шир"; hInp.placeholder="см²"; hInp.style.display="block"; hInp.disabled=true; }
-            else if (t==='pearl') { lInp.placeholder="Ø"; }
-            else { lInp.placeholder = (s==='krug'||s==='shar') ? 'Ø' : 'Д1'; }
-            
-            autoCalc();
-        };
-
-        const autoCalc = () => {
-            const t = sType.value; const l = parseFloat(lInp.value)||0; const w = parseFloat(wInp.value)||l;
-            if (t === 'enamel') hInp.value = l > 0 ? (l * w / 100).toFixed(2) : "";
-            else if (t !== 'pearl' && l > 0 && hInp.dataset.auto === "true") hInp.value = (w * 0.6).toFixed(2);
-            calculate();
-        };
-
-        function reattachSelectEvents(selectEl) {
-            selectEl.querySelectorAll('.select-option').forEach(opt => {
-                opt.onclick = () => {
-                    selectEl.querySelector('.trig-content').innerHTML = opt.innerHTML;
-                    selectEl.querySelector('input').value = opt.dataset.val;
-                    selectEl.classList.remove('open');
-                    updateUI();
+            div.querySelectorAll('.custom-select').forEach(sel => {
+                sel.querySelector('.select-trigger').onclick = () => {
+                    const state = sel.classList.contains('open');
+                    document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
+                    if(!state) sel.classList.add('open');
                 };
+                reattachSelectEvents(sel);
             });
-        }
 
-        div.querySelectorAll('.custom-select').forEach(sel => {
-            sel.querySelector('.select-trigger').onclick = () => {
-                const state = sel.classList.contains('open');
-                document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
-                if(!state) sel.classList.add('open');
-            };
-            reattachSelectEvents(sel);
-        });
+            lInp.oninput = autoCalc; wInp.oninput = autoCalc;
+            hInp.oninput = () => { hInp.dataset.auto = hInp.value===''?"true":"false"; autoCalc(); };
+            div.querySelector('.s-q').oninput = calculate;
+            div.querySelector('.btn-remove').onclick = () => { div.remove(); calculate(); };
+            
+            document.getElementById('stones-container').appendChild(div);
+            updateUI();
+        };
+    }
 
-        lInp.oninput = autoCalc; wInp.oninput = autoCalc;
-        hInp.oninput = () => { hInp.dataset.auto = hInp.value===''?"true":"false"; autoCalc(); };
-        div.querySelector('.s-q').oninput = calculate;
-        div.querySelector('.btn-remove').onclick = () => { div.remove(); calculate(); };
-        
-        document.getElementById('stones-container').appendChild(div);
-        updateUI();
-    };
-
-    // --- КЛИКИ (ЗАКРЫТИЕ МЕНЮ И АККОРДЕОН) ---
+    // --- ГЛОБАЛЬНЫЕ КЛИКИ ---
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.custom-select')) document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
         if (e.target.closest('#btn-interest-toggle')) document.getElementById('btn-interest-toggle').classList.toggle('open');
@@ -355,7 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Делегирование событий на все радиокнопки и инпуты
     document.body.addEventListener('change', (e) => {
         if(e.target.tagName === 'INPUT' && (e.target.type === 'radio' || e.target.type === 'checkbox')) calculate();
     });
