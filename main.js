@@ -1,7 +1,6 @@
-// Ждем полной загрузки HTML и дизайна, чтобы скрипт не срабатывал в пустоту
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- БАЗА ДАННЫХ SVG ИКОНОК ---
+    // --- ГЛОБАЛЬНЫЕ ДАННЫЕ И SVG ---
     const SVGS = {
         arrow: `<svg class="arrow-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
         types: {
@@ -31,455 +30,309 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- КОНСТАНТЫ РАСЧЕТОВ ---
     const stoneCoeffs = { 'krug':0.0135, 'baget':0.02175, 'grusha':0.013125, 'kvadrat':0.01725, 'markiz':0.012, 'oval':0.015, 'oktagon':0.018375, 'serdtse':0.01575, 'treugolnik':0.0135, 'trillion':0.01275, 'shar':0.019425 };
     const BASE_SELLING_PRICE = 6500; 
-    let currentLoanTotal = 0; 
+    let currentLoanTotal = 0;
 
-    // --- ИНИЦИАЛИЗАЦИЯ ДАТЫ ДЛЯ ПРОЦЕНТОВ ---
+    // --- ИНИЦИАЛИЗАЦИЯ КАЛЕНДАРЯ ---
     const targetDateInput = document.getElementById('targetDate');
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const pad = n => String(n).padStart(2, '0');
+    
     if (targetDateInput) {
-        const todayDate = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        const todayStr = `${todayDate.getFullYear()}-${pad(todayDate.getMonth()+1)}-${pad(todayDate.getDate())}`;
-        targetDateInput.min = todayStr;
-
-        const nextMonthDate = new Date();
-        nextMonthDate.setDate(nextMonthDate.getDate() + 31);
-        targetDateInput.value = `${nextMonthDate.getFullYear()}-${pad(nextMonthDate.getMonth()+1)}-${pad(nextMonthDate.getDate())}`;
+        targetDateInput.min = `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 31);
+        targetDateInput.value = `${defaultDate.getFullYear()}-${pad(defaultDate.getMonth()+1)}-${pad(defaultDate.getDate())}`;
     }
 
-    // --- ГЛАВНАЯ ФУНКЦИЯ РАСЧЕТА ---
+    // --- ОСНОВНОЙ РАСЧЕТ ---
     function calculate() {
-        const totalWeightEl = document.getElementById('totalWeight');
-        const totalW = totalWeightEl ? (parseFloat(totalWeightEl.value) || 0) : 0;
-        
+        const totalW = parseFloat(document.getElementById('totalWeight').value) || 0;
         const isHollow = document.getElementById('isHollow').checked;
-        const isBuyout = document.getElementById('isBuyout').checked; 
-        
+        const isBuyout = document.getElementById('isBuyout').checked;
         const insSwitch = document.getElementById('isInsured');
-        const insContainer = document.getElementById('ins-container');
-        const opStatus = document.getElementById('op-status');
-        const insStatus = document.getElementById('ins-status');
-        const interestBlock = document.getElementById('interest-block');
         
-        // 1. Логика переключателей (Залог / Скупка)
+        // 1. Управление тумблерами
         if (isBuyout) {
-            opStatus.innerText = "Скупка"; opStatus.style.color = "var(--accent)";
+            document.getElementById('op-status').innerText = "Скупка";
             document.getElementById('price-group-zalog').style.display = 'none';
             document.getElementById('price-group-skupka').style.display = 'flex';
-            document.getElementById('lbl-price-group').innerText = "Тариф за грамм (Скупка)";
-            document.getElementById('margin-block').style.display = 'block'; 
-            if(interestBlock) interestBlock.style.display = 'none'; 
-            
-            insSwitch.checked = true; insContainer.style.opacity = '0.6'; insContainer.style.pointerEvents = 'none';
-            insStatus.innerText = "Обязательно (Скупка)"; insStatus.style.color = "var(--accent)";
+            document.getElementById('margin-block').style.display = 'block';
+            document.getElementById('interest-block').style.display = 'none';
+            insSwitch.checked = true;
+            document.getElementById('ins-container').style.opacity = '0.5';
+            document.getElementById('ins-container').style.pointerEvents = 'none';
+            document.getElementById('ins-status').innerText = "Обязательно";
         } else {
-            opStatus.innerText = "Залог"; opStatus.style.color = "var(--text-main)";
+            document.getElementById('op-status').innerText = "Залог";
             document.getElementById('price-group-zalog').style.display = 'flex';
             document.getElementById('price-group-skupka').style.display = 'none';
-            document.getElementById('lbl-price-group').innerText = "Тариф за грамм (Залог)";
-            document.getElementById('margin-block').style.display = 'none'; 
-            if(interestBlock) interestBlock.style.display = 'block'; 
-            
-            insContainer.style.opacity = '1'; insContainer.style.pointerEvents = 'auto';
-            insStatus.innerText = insSwitch.checked ? "Включена (База)" : "Отключена (Снижен)";
-            insStatus.style.color = insSwitch.checked ? "#34c759" : "var(--danger)";
+            document.getElementById('margin-block').style.display = 'none';
+            document.getElementById('interest-block').style.display = 'block';
+            document.getElementById('ins-container').style.opacity = '1';
+            document.getElementById('ins-container').style.pointerEvents = 'auto';
+            document.getElementById('ins-status').innerText = insSwitch.checked ? "Включена" : "Отключена";
         }
 
         const isInsured = insSwitch.checked;
-        const itemTypeChecked = document.querySelector('input[name="itemType"]:checked');
-        const itemDeduct = itemTypeChecked ? parseFloat(itemTypeChecked.value) : 0;
-        
-        let stoneWeightCt = 0; let cartItemsHTML = '';
+        const purity = parseFloat(document.querySelector('input[name="purity"]:checked').value);
+        const itemDeduct = parseFloat(document.querySelector('input[name="itemType"]:checked').value);
 
-        // 2. Грязь и Замок
-        if (totalW > 0) {
-            cartItemsHTML += `<div class="cart-item deduction"><span>Загрязнение х 1</span><span>-0.100 г</span></div>`;
-            if (itemDeduct === 0.15) cartItemsHTML += `<div class="cart-item deduction"><span>Замок х 1</span><span>-0.050 г</span></div>`;
-        }
-
-        // 3. Расчет Камней
-        document.querySelectorAll('.stone-row').forEach(row => {
-            const type = row.querySelector('.val-t').value;
-            const shape = row.querySelector('.val-shape').value;
-            const summaryTextEl = row.querySelector('.summary-text');
-            const summaryIconEl = row.querySelector('.summary-icon');
-            
-            const lInput = row.querySelector('.s-l');
-            const wInput = row.querySelector('.s-w');
-            const hInput = row.querySelector('.s-h');
-            const qtyInput = row.querySelector('.s-q');
-            
-            const l = parseFloat(lInput.value) || 0;
-            const w = parseFloat(wInput.value) || l;
-            const hInputVal = hInput.value;
-            const h = parseFloat(hInputVal) || (w * 0.6);
-            const qty = parseInt(qtyInput.value) || 1;
-            
-            if (l > 0) {
-                let ctTotal = 0, gramTotal = 0, dimsText = "";
-                
-                if (type === 'enamel') {
-                    let area = (l * w) / 100;
-                    gramTotal = area * 0.1 * qty;
-                    dimsText = `${l}x${w} мм (${area.toFixed(2)} см²)`;
-                    cartItemsHTML += `<div class="cart-item deduction"><span>Эмаль ${dimsText} х ${qty} шт</span><span>-${gramTotal.toFixed(3)} г</span></div>`;
-                    summaryIconEl.innerHTML = SVGS.types.enamel;
-                    summaryTextEl.innerHTML = `<span style="color:var(--text-main);">Эмаль</span> <span class="badge-qty">${qty} шт</span> <span style="margin-left:auto;"><b style="color:var(--danger);">-${gramTotal.toFixed(3)} г</b></span>`;
-                } else if (type === 'pearl') {
-                    let ct = Math.pow(l, 3) * 0.01295; ctTotal = ct * qty; gramTotal = ctTotal * 0.2; dimsText = `Ø${l}`;
-                    cartItemsHTML += `<div class="cart-item deduction"><span>Жемчуг ${dimsText} мм х ${qty} шт</span><span>-${gramTotal.toFixed(3)} г</span></div>`;
-                    summaryIconEl.innerHTML = SVGS.types.pearl;
-                    summaryTextEl.innerHTML = `<span style="color:var(--text-main);">Жемчуг</span> <span class="badge-qty">${qty} шт</span> <span style="margin-left:auto;"><b style="color:var(--danger);">-${gramTotal.toFixed(3)} г</b> <span style="color:var(--text-secondary); font-size:11px;">(${ctTotal.toFixed(3)} ct)</span></span>`;
-                } else if (type === 'amber') {
-                    let ct = l * w * h * 0.0065; ctTotal = ct * qty; gramTotal = ctTotal * 0.2;
-                    dimsText = `${l}x${w}`; if (hInputVal !== "") dimsText += `x${hInputVal}`; else dimsText += `x${h.toFixed(1)}`;
-                    cartItemsHTML += `<div class="cart-item deduction"><span>Янтарь ${dimsText} мм х ${qty} шт</span><span>-${gramTotal.toFixed(3)} г</span></div>`;
-                    summaryIconEl.innerHTML = SVGS.types.amber;
-                    summaryTextEl.innerHTML = `<span style="color:var(--text-main);">Янтарь</span> <span class="badge-qty">${qty} шт</span> <span style="margin-left:auto;"><b style="color:var(--danger);">-${gramTotal.toFixed(3)} г</b> <span style="color:var(--text-secondary); font-size:11px;">(${ctTotal.toFixed(3)} ct)</span></span>`;
-                } else {
-                    let ct = l * w * h * (stoneCoeffs[shape] || 0.0135);
-                    if (type === 'diamond') ct *= (0.0037 / 0.0081);
-                    ctTotal = ct * qty; gramTotal = ctTotal * 0.2;
-                    
-                    if (shape === 'krug' || shape === 'shar') { dimsText = `Ø${l}`; } 
-                    else if (shape === 'kvadrat') { dimsText = `${l}x${l}`; if (hInputVal !== "") dimsText += `x${hInputVal}`; else dimsText += `x${h.toFixed(1)}`; } 
-                    else { dimsText = `${l}x${w}`; if (hInputVal !== "") dimsText += `x${hInputVal}`; else dimsText += `x${h.toFixed(1)}`; }
-                    
-                    cartItemsHTML += `<div class="cart-item deduction"><span>${SVGS.names[type]} ${SVGS.names[shape]} ${dimsText} мм х ${qty} шт</span><span>-${gramTotal.toFixed(3)} г</span></div>`;
-                    summaryIconEl.innerHTML = SVGS.shapes[shape];
-                    summaryTextEl.innerHTML = `<span style="color:var(--text-main);">${SVGS.names[type]} ${SVGS.names[shape]}</span> <span class="badge-qty">${qty} шт</span> <span style="margin-left:auto;"><b style="color:var(--danger);">-${gramTotal.toFixed(3)} г</b> <span style="color:var(--text-secondary); font-size:11px;">(${ctTotal.toFixed(3)} ct)</span></span>`;
+        // 2. Обновление цен на кнопках в реальном времени
+        document.querySelectorAll('.radio-label input').forEach(radio => {
+            if (radio.name === 'price_zalog' || radio.name === 'price_skupka') {
+                const base = parseFloat(radio.value);
+                const calc = Math.round(base * (purity / 585));
+                const btn = radio.nextElementSibling;
+                if (btn) {
+                    btn.querySelector('.calc-val').innerText = calc.toLocaleString() + ' ₽';
+                    btn.querySelector('.base-val').innerText = '(' + base.toLocaleString() + ' ₽)';
                 }
-                stoneWeightCt += ctTotal;
-            } else {
-                summaryIconEl.innerHTML = SVGS.types[type] || SVGS.types.fianite;
-                summaryTextEl.innerHTML = `<span style="color:var(--text-secondary);">Вставка (нажмите для ввода)</span>`;
             }
         });
 
-        const stonesG = document.querySelectorAll('.stone-row').length > 0 ? 
-            Array.from(document.querySelectorAll('.stone-row')).reduce((sum, row) => {
+        // 3. Расчет вычетов (Корзина)
+        let stonesGramsTotal = 0;
+        let stonesCaratsTotal = 0;
+        let cartHTML = '';
+
+        if (totalW > 0) {
+            cartHTML += `<div class="cart-item"><span>Грязь/Замок</span><span>-${itemDeduct.toFixed(3)} г</span></div>`;
+            
+            document.querySelectorAll('.stone-row').forEach(row => {
                 const type = row.querySelector('.val-t').value;
                 const shape = row.querySelector('.val-shape').value;
-                const l = parseFloat(row.querySelector('.s-l').value) || 0;
-                const w = parseFloat(row.querySelector('.s-w').value) || l;
-                const h = parseFloat(row.querySelector('.s-h').value) || (w * 0.6);
-                const qty = parseInt(row.querySelector('.s-q').value) || 1;
-                
-                if (l === 0) return sum;
-                if (type === 'enamel') return sum + ((l * w) / 100 * 0.1 * qty);
-                if (type === 'pearl') return sum + (Math.pow(l, 3) * 0.01295 * qty * 0.2);
-                if (type === 'amber') return sum + (l * w * h * 0.0065 * qty * 0.2);
-                
-                let ct = l * w * h * (stoneCoeffs[shape] || 0.0135);
-                if (type === 'diamond') ct *= (0.0037 / 0.0081);
-                return sum + (ct * qty * 0.2);
-            }, 0) : 0;
+                const L = parseFloat(row.querySelector('.s-l').value) || 0;
+                const W = parseFloat(row.querySelector('.s-w').value) || L;
+                const H = parseFloat(row.querySelector('.s-h').value) || (W * 0.6);
+                const Q = parseInt(row.querySelector('.s-q').value) || 1;
 
-        // 4. Пустотелость и Итог веса
-        const hollowD = isHollow ? (totalW * 0.05) : 0;
-        const heavyD = totalW > 20 ? (totalW * 0.005) : 0;
-        
-        if (totalW > 0) {
-            if (isHollow) cartItemsHTML += `<div class="cart-item deduction"><span>Пустотелость (5%)</span><span>-${hollowD.toFixed(3)} г</span></div>`;
-            if (heavyD > 0) cartItemsHTML += `<div class="cart-item deduction"><span>Свыше 20г (0.5%)</span><span>-${heavyD.toFixed(3)} г</span></div>`;
+                if (L > 0) {
+                    let gram = 0; let ct = 0;
+                    if (type === 'enamel') {
+                        gram = (L * W / 100) * 0.1 * Q;
+                    } else if (type === 'pearl') {
+                        ct = Math.pow(L, 3) * 0.01295 * Q;
+                        gram = ct * 0.2;
+                    } else if (type === 'amber') {
+                        ct = L * W * H * 0.0065 * Q;
+                        gram = ct * 0.2;
+                    } else {
+                        ct = L * W * H * (stoneCoeffs[shape] || 0.0135);
+                        if (type === 'diamond') ct *= (0.0037 / 0.0081);
+                        ct *= Q;
+                        gram = ct * 0.2;
+                    }
+                    stonesGramsTotal += gram;
+                    stonesCaratsTotal += ct;
+                    
+                    const name = SVGS.names[type] + (type === 'enamel' || type === 'pearl' ? '' : ' ' + SVGS.names[shape]);
+                    cartHTML += `<div class="cart-item"><span>${name} x${Q}</span><span>-${gram.toFixed(3)} г</span></div>`;
+                }
+            });
+
+            if (isHollow) {
+                const hd = totalW * 0.05;
+                cartHTML += `<div class="cart-item"><span>Пустотелость</span><span>-${hd.toFixed(3)} г</span></div>`;
+                stonesGramsTotal += hd;
+            }
+            if (totalW > 20) {
+                const hv = totalW * 0.005;
+                cartHTML += `<div class="cart-item"><span>Тяжеловес (>20г)</span><span>-${hv.toFixed(3)} г</span></div>`;
+                stonesGramsTotal += hv;
+            }
         }
 
-        let netW = 0;
+        const netW = Math.max(0, totalW - itemDeduct - stonesGramsTotal);
+        document.getElementById('netWeight').value = netW.toFixed(3);
+        
         if (totalW > 0) {
-            netW = Math.max(0, totalW - itemDeduct - stonesG - hollowD - heavyD);
             document.getElementById('cart-container').style.display = 'block';
-            document.getElementById('cart-items').innerHTML = cartItemsHTML;
-            document.getElementById('cart-net-weight').innerText = `${netW.toFixed(3)} г`;
+            document.getElementById('cart-items').innerHTML = cartHTML;
+            document.getElementById('cart-net-weight').innerText = netW.toFixed(3) + ' г';
         } else {
             document.getElementById('cart-container').style.display = 'none';
         }
-        
-        document.getElementById('netWeight').value = netW.toFixed(3);
 
-        // 5. Пересчет Цен
-        const purityChecked = document.querySelector('input[name="purity"]:checked');
-        const purity = purityChecked ? parseFloat(purityChecked.value) : 585;
-        document.getElementById('res-purity-label').innerText = purity;
-        
+        // 4. Лимиты и Итоги
         const btn7000 = document.getElementById('btn7000');
+        let selectedBase = 0;
         
-        if (!isBuyout) {
-            if(btn7000) btn7000.value = isInsured ? "7000" : "6300";
-        }
-
-        document.querySelectorAll('input[name="price_zalog"], input[name="price_skupka"]').forEach(radio => {
-            const baseVal = parseFloat(radio.value);
-            const calcVal = Math.round(baseVal * (purity / 585));
-            const btn = radio.nextElementSibling;
-            if(btn) {
-                const calcEl = btn.querySelector('.calc-val');
-                const baseEl = btn.querySelector('.base-val');
-                if(calcEl) calcEl.innerText = `${calcVal.toLocaleString('ru-RU')} ₽`;
-                if(baseEl) baseEl.innerText = `(${baseVal.toLocaleString('ru-RU')} ₽)`;
-            }
-        });
-
-        // 6. Лимиты и Итоговая сумма
-        let basePrice = 0;
         if (isBuyout) {
-            const skupkaChecked = document.querySelector('input[name="price_skupka"]:checked');
-            if(skupkaChecked) basePrice = parseFloat(skupkaChecked.value);
-            if(btn7000) btn7000.disabled = false;
+            selectedBase = parseFloat(document.querySelector('input[name="price_skupka"]:checked').value);
             document.getElementById('limitMsg').style.display = 'none';
+            btn7000.disabled = false;
         } else {
-            const zalogChecked = document.querySelector('input[name="price_zalog"]:checked');
-            if(zalogChecked) basePrice = parseFloat(zalogChecked.value);
-            
             const checkPrice = isInsured ? 7000 : 6300;
-            const checkAmountHand = Math.round(netW * Math.round(checkPrice * (purity/585)));
-            
-            if (checkAmountHand > 150000) {
-                if(btn7000) btn7000.disabled = true; 
+            const checkTotal = Math.round(netW * Math.round(checkPrice * (purity/585)));
+            if (checkTotal > 150000) {
+                btn7000.disabled = true;
                 document.getElementById('limitMsg').style.display = 'flex';
-                if(btn7000 && btn7000.checked) { 
-                    const btn6000 = document.querySelector('input[name="price_zalog"][value="6000"]');
-                    if(btn6000) btn6000.checked = true; 
-                    basePrice = 6000; 
-                }
+                if (btn7000.checked) document.querySelector('input[name="price_zalog"][value="6000"]').checked = true;
             } else {
-                if(btn7000) btn7000.disabled = false; 
+                btn7000.disabled = false;
                 document.getElementById('limitMsg').style.display = 'none';
             }
+            selectedBase = parseFloat(document.querySelector('input[name="price_zalog"]:checked').value);
         }
 
-        const actualPrice = Math.round(basePrice * (purity / 585));
-        
-        document.getElementById('res-base-price').innerText = basePrice.toLocaleString('ru-RU') + ' ₽';
-        document.getElementById('res-actual-price').innerText = actualPrice.toLocaleString('ru-RU') + ' ₽';
-
-        // Расчет Маржи
-        if (isBuyout) {
-            const actualSellingPrice = Math.round(BASE_SELLING_PRICE * (purity / 585));
-            const margin = Math.round((actualSellingPrice - actualPrice) * netW);
-            document.getElementById('res-margin').innerText = margin.toLocaleString('ru-RU') + ' ₽';
-        }
-
+        const actualPrice = Math.round(selectedBase * (purity / 585));
         const amountHand = Math.round(netW * actualPrice);
         
-        // Отрисовка чека
-        if(isInsured && amountHand > 0) {
+        document.getElementById('res-base-price').innerText = selectedBase.toLocaleString() + ' ₽';
+        document.getElementById('res-actual-price').innerText = actualPrice.toLocaleString() + ' ₽';
+        document.getElementById('res-purity-label').innerText = purity;
+
+        if (isBuyout) {
+            const margin = Math.round((Math.round(BASE_SELLING_PRICE * (purity / 585)) - actualPrice) * netW);
+            document.getElementById('res-margin').innerText = margin.toLocaleString() + ' ₽';
+        }
+
+        if (isInsured && !isBuyout) {
             document.getElementById('insurance-blocks').style.display = 'block';
-            const insAmount = Math.round(amountHand * 0.2376);
-            const loanTotal = amountHand + insAmount;
-            document.getElementById('res-hand').innerText = amountHand.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('res-ins').innerText = insAmount.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('total-label').innerText = "Сумма в договор займа:";
-            document.getElementById('res-total').innerText = loanTotal.toLocaleString('ru-RU') + ' ₽';
-            currentLoanTotal = loanTotal; 
+            const ins = Math.round(amountHand * 0.2376);
+            currentLoanTotal = amountHand + ins;
+            document.getElementById('res-hand').innerText = amountHand.toLocaleString() + ' ₽';
+            document.getElementById('res-ins').innerText = ins.toLocaleString() + ' ₽';
+            document.getElementById('res-total').innerText = currentLoanTotal.toLocaleString() + ' ₽';
+            document.getElementById('total-label').innerText = "Сумма займа:";
         } else {
             document.getElementById('insurance-blocks').style.display = 'none';
+            currentLoanTotal = amountHand;
+            document.getElementById('res-total').innerText = amountHand.toLocaleString() + ' ₽';
             document.getElementById('total-label').innerText = "К выдаче на руки:";
-            document.getElementById('res-total').innerText = amountHand.toLocaleString('ru-RU') + ' ₽';
-            currentLoanTotal = amountHand; 
         }
 
         updateInterest();
     }
 
-    // --- ФУНКЦИЯ ПРОЦЕНТОВ ПО ЗАЛОГУ ---
+    // --- РАСЧЕТ ПРОЦЕНТОВ ---
     function updateInterest() {
-        if (document.getElementById('isBuyout').checked || currentLoanTotal === 0 || !targetDateInput) {
-            document.getElementById('int-days').innerText = "0";
-            document.getElementById('int-percent').innerText = "0.000%";
-            document.getElementById('int-sum').innerText = "0 ₽";
-            document.getElementById('int-total-return').innerText = "0 ₽";
-            return;
-        }
-
+        if (document.getElementById('isBuyout').checked || currentLoanTotal === 0) return;
+        
         const tDate = new Date(targetDateInput.value);
-        const today = new Date();
-        today.setHours(0,0,0,0); tDate.setHours(0,0,0,0);
-
-        let diffTime = tDate.getTime() - today.getTime();
-        let days = Math.floor(diffTime / (1000 * 3600 * 24)) + 1; 
+        const diff = Math.ceil((tDate - today) / (1000 * 60 * 60 * 24)) + 1;
+        let days = Math.max(1, diff);
         
-        if (days < 1) days = 1;
+        let rate = 0;
+        if (days > 1) rate += Math.min(days - 1, 5) * 0.402;
+        if (days > 6) rate += Math.min(days - 6, 17) * 0.128;
+        if (days > 23) rate += (days - 23) * 0.578;
 
-        let percent = 0;
-        if (days > 1) percent += Math.min(days - 1, 5) * 0.402; 
-        if (days > 6) percent += Math.min(days - 6, 17) * 0.128; 
-        if (days > 23) percent += (days - 23) * 0.578;          
-
-        const accruedSum = Math.round(currentLoanTotal * (percent / 100));
-        const totalReturn = currentLoanTotal + accruedSum;
-
+        const sum = Math.round(currentLoanTotal * (rate / 100));
         document.getElementById('int-days').innerText = days;
-        document.getElementById('int-percent').innerText = percent.toFixed(3) + '%';
-        document.getElementById('int-sum').innerText = accruedSum.toLocaleString('ru-RU') + ' ₽';
-        document.getElementById('int-total-return').innerText = totalReturn.toLocaleString('ru-RU') + ' ₽';
+        document.getElementById('int-percent').innerText = rate.toFixed(3) + '%';
+        document.getElementById('int-sum').innerText = sum.toLocaleString() + ' ₽';
+        document.getElementById('int-total-return').innerText = (currentLoanTotal + sum).toLocaleString() + ' ₽';
     }
 
-    if(targetDateInput) {
-        targetDateInput.addEventListener('input', updateInterest);
-    }
+    // --- УПРАВЛЕНИЕ ВСТАВКАМИ ---
+    document.getElementById('btnAddStone').onclick = () => {
+        const container = document.getElementById('stones-container');
+        document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
 
-    // --- ГЕНЕРАТОР ОПЦИЙ SELECT ---
-    function generateOptionsHTML(dataObj, currentKey) {
-        return Object.keys(dataObj).map(key => `<div class="select-option" data-val="${key}">${dataObj[key]} ${SVGS.names[key]}</div>`).join('');
-    }
-
-    // --- ДОБАВЛЕНИЕ КАМНЯ ---
-    const btnAddStone = document.getElementById('btnAddStone');
-    if (btnAddStone) {
-        btnAddStone.onclick = () => {
-            document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
-
-            const div = document.createElement('div');
-            div.className = 'stone-row';
-            div.dataset.shape = 'krug'; 
-            
-            div.innerHTML = `
-                <div class="stone-content">
-                    <div class="stone-inputs">
-                        <div class="custom-select s-t-wrap">
-                            <div class="select-trigger"><div class="trig-content">${SVGS.types.fianite} Фианит</div>${SVGS.arrow}</div>
-                            <div class="select-options">${generateOptionsHTML(SVGS.types, 'fianite')}</div>
-                            <input type="hidden" class="val-t" value="fianite">
-                        </div>
-                        <div class="custom-select s-shape-wrap">
-                            <div class="select-trigger"><div class="trig-content">${SVGS.shapes.krug} Круг</div>${SVGS.arrow}</div>
-                            <div class="select-options">${generateOptionsHTML(SVGS.shapes, 'krug')}</div>
-                            <input type="hidden" class="val-shape" value="krug">
-                        </div>
-
-                        <input type="number" class="glass-input s-l" placeholder="Диаметр" step="0.01">
-                        <input type="number" class="glass-input s-w" placeholder="Д2" step="0.01">
-                        <input type="number" class="glass-input s-h" placeholder="Выс" step="0.01" data-auto="true">
-                        <input type="number" class="glass-input s-q" value="1" min="1" placeholder="Шт">
+        const div = document.createElement('div');
+        div.className = 'stone-row';
+        div.dataset.shape = 'krug';
+        div.innerHTML = `
+            <div class="stone-content">
+                <div class="stone-inputs">
+                    <div class="custom-select s-t-wrap">
+                        <div class="select-trigger"><div class="trig-content">${SVGS.types.fianite} Фианит</div>${SVGS.arrow}</div>
+                        <div class="select-options">${Object.keys(SVGS.types).map(k => `<div class="select-option" data-val="${k}">${SVGS.types[k]} ${SVGS.names[k]}</div>`).join('')}</div>
+                        <input type="hidden" class="val-t" value="fianite">
                     </div>
-                    <div class="stone-summary">
-                        <div class="summary-text"><span class="summary-icon">${SVGS.types.fianite}</span> Вставка (нажмите для ввода)</div>
+                    <div class="custom-select s-shape-wrap">
+                        <div class="select-trigger"><div class="trig-content">${SVGS.shapes.krug} Круг</div>${SVGS.arrow}</div>
+                        <div class="select-options">${Object.keys(SVGS.shapes).map(k => `<div class="select-option" data-val="${k}">${SVGS.shapes[k]} ${SVGS.names[k]}</div>`).join('')}</div>
+                        <input type="hidden" class="val-shape" value="krug">
                     </div>
+                    <input type="number" class="glass-input s-l" placeholder="Ø" step="0.01">
+                    <input type="number" class="glass-input s-w" placeholder="Д2" step="0.01">
+                    <input type="number" class="glass-input s-h" placeholder="Выс" step="0.01" data-auto="true">
+                    <input type="number" class="glass-input s-q" value="1" min="1">
                 </div>
-                <button class="btn-remove" title="Удалить">×</button>
-            `;
+                <div class="stone-summary">
+                    <div class="summary-text"><span class="summary-icon">${SVGS.types.fianite}</span> Вставка...</div>
+                </div>
+            </div>
+            <button class="btn-remove">×</button>
+        `;
+
+        const sType = div.querySelector('.val-t');
+        const sShape = div.querySelector('.val-shape');
+        const lInp = div.querySelector('.s-l');
+        const wInp = div.querySelector('.s-w');
+        const hInp = div.querySelector('.s-h');
+
+        const updateUI = () => {
+            const t = sType.value; const s = sShape.value;
+            div.dataset.shape = s;
+            div.querySelector('.s-shape-wrap').style.display = (t==='enamel'||t==='pearl'||t==='amber') ? 'none' : 'block';
+            wInp.style.display = (s==='krug'||s==='shar'||s==='kvadrat'||t==='pearl') ? 'none' : 'block';
+            hInp.style.display = (s==='krug'||s==='shar'||t==='pearl') ? 'none' : 'block';
             
-            const typeInput = div.querySelector('.val-t');
-            const shapeInput = div.querySelector('.val-shape');
-            const shapeWrap = div.querySelector('.s-shape-wrap');
-            const typeWrap = div.querySelector('.s-t-wrap');
-            const lInput = div.querySelector('.s-l');
-            const wInput = div.querySelector('.s-w');
-            const hInput = div.querySelector('.s-h');
-
-            const updateShapeUI = () => {
-                const type = typeInput.value;
-                const shape = shapeInput.value;
-                
-                shapeWrap.style.display = 'block';
-                wInput.style.display = 'block'; 
-                hInput.style.display = 'block';
-                lInput.style.gridColumn = "auto";
-                typeWrap.style.gridColumn = "auto";
-                hInput.disabled = false;
-                div.dataset.shape = shape;
-
-                if (type === 'enamel') {
-                    shapeWrap.style.display = 'none'; 
-                    typeWrap.style.gridColumn = "span 2";
-                    lInput.placeholder = "Дл. (мм)"; wInput.placeholder = "Шир. (мм)"; hInput.placeholder = "см² (авто)";
-                    hInput.disabled = true; wInput.value = ""; hInput.value = "";
-                } else if (type === 'pearl') {
-                    shapeWrap.style.display = 'none'; wInput.style.display = 'none'; hInput.style.display = 'none';
-                    typeWrap.style.gridColumn = "span 2"; lInput.style.gridColumn = "span 3";
-                    lInput.placeholder = "Диаметр (мм)"; wInput.value = ""; hInput.value = "";
-                } else if (type === 'amber') {
-                    shapeWrap.style.display = 'none'; typeWrap.style.gridColumn = "span 2";
-                    lInput.placeholder = "Д1"; wInput.placeholder = "Д2"; hInput.placeholder = "Выс";
-                } else {
-                    if (shape === 'krug' || shape === 'shar') {
-                        lInput.placeholder = "Диаметр"; wInput.style.display = "none"; hInput.style.display = "none";
-                        lInput.style.gridColumn = "span 3"; wInput.value = ""; hInput.value = ""; 
-                    } else if (shape === 'kvadrat') {
-                        lInput.placeholder = "Сторона"; wInput.style.display = "none"; lInput.style.gridColumn = "span 2"; wInput.value = ""; 
-                    } else { lInput.placeholder = "Д1"; wInput.placeholder = "Д2"; hInput.placeholder = "Выс"; }
-                }
-                updateHeightAndCalc();
-            };
-
-            const updateHeightAndCalc = () => {
-                let type = typeInput.value;
-                let l = parseFloat(lInput.value) || 0; let w = parseFloat(wInput.value) || l;
-                
-                if (type === 'enamel') {
-                    if (l > 0) hInput.value = ((l * w) / 100).toFixed(2); else hInput.value = "";
-                } else if (type !== 'pearl' && l > 0 && hInput.dataset.auto === "true") {
-                    hInput.value = (w * 0.6).toFixed(2);
-                } else if (l === 0 && w === 0 && hInput.dataset.auto === "true") { hInput.value = ""; }
-                calculate();
-            };
-
-            div.querySelectorAll('.custom-select').forEach(select => {
-                select.querySelector('.select-trigger').onclick = (e) => {
-                    const isOpen = select.classList.contains('open');
-                    document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
-                    if(!isOpen) select.classList.add('open');
-                };
-                select.querySelectorAll('.select-option').forEach(opt => {
-                    opt.onclick = () => {
-                        const val = opt.dataset.val; const text = opt.innerText; const icon = opt.querySelector('svg').outerHTML;
-                        select.querySelector('.trig-content').innerHTML = `${icon} ${text}`;
-                        select.querySelector('input[type="hidden"]').value = val;
-                        select.classList.remove('open');
-                        updateShapeUI();
-                    };
-                });
-            });
-
-            lInput.addEventListener('input', updateHeightAndCalc); 
-            wInput.addEventListener('input', updateHeightAndCalc);
-            hInput.addEventListener('input', () => { 
-                hInput.dataset.auto = hInput.value === '' ? "true" : "false"; 
-                calculate(); 
-            });
-            div.querySelector('.btn-remove').onclick = () => { div.remove(); calculate(); };
-            div.querySelectorAll('.s-q').forEach(el => el.addEventListener('input', calculate));
+            if (t==='enamel') { lInp.placeholder="Дл"; wInp.placeholder="Шир"; hInp.placeholder="см²"; hInp.style.display="block"; hInp.disabled=true; }
+            else if (t==='pearl') { lInp.placeholder="Ø"; }
+            else { lInp.placeholder = (s==='krug'||s==='shar') ? 'Ø' : 'Д1'; hInp.disabled=false; }
             
-            document.getElementById('stones-container').appendChild(div);
-            updateShapeUI();
+            autoCalc();
         };
-    }
 
-    // --- ГЛОБАЛЬНЫЕ КЛИКИ ---
+        const autoCalc = () => {
+            const t = sType.value; const l = parseFloat(lInp.value)||0; const w = parseFloat(wInp.value)||l;
+            if (t === 'enamel') hInp.value = l > 0 ? (l * w / 100).toFixed(2) : "";
+            else if (l > 0 && hInp.dataset.auto === "true") hInp.value = (w * 0.6).toFixed(2);
+            calculate();
+        };
+
+        div.querySelectorAll('.custom-select').forEach(sel => {
+            sel.querySelector('.select-trigger').onclick = () => {
+                const state = sel.classList.contains('open');
+                document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
+                if(!state) sel.classList.add('open');
+            };
+            sel.querySelectorAll('.select-option').forEach(opt => {
+                opt.onclick = () => {
+                    sel.querySelector('.trig-content').innerHTML = opt.innerHTML;
+                    sel.querySelector('input').value = opt.dataset.val;
+                    sel.classList.remove('open');
+                    updateUI();
+                };
+            });
+        });
+
+        lInp.oninput = autoCalc; wInp.oninput = autoCalc;
+        hInp.oninput = () => { hInp.dataset.auto = hInp.value===''?"true":"false"; autoCalc(); };
+        div.querySelector('.s-q').oninput = calculate;
+        div.querySelector('.btn-remove').onclick = () => { div.remove(); calculate(); };
+        
+        container.appendChild(div);
+        updateUI();
+    };
+
+    // --- КЛИКИ И АККОРДЕОНЫ ---
     document.addEventListener('click', (e) => {
-        if (!e.target.closest('.custom-select')) { 
-            document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open')); 
-        }
+        if (!e.target.closest('.custom-select')) document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('open'));
+        if (e.target.closest('#btn-interest-toggle')) document.getElementById('btn-interest-toggle').classList.toggle('open');
         
-        if (e.target.closest('#btn-interest-toggle')) {
-            document.getElementById('btn-interest-toggle').classList.toggle('open');
-        }
-
-        const clickedSummary = e.target.closest('.stone-summary');
-        if (clickedSummary) {
-            const rowToExpand = clickedSummary.closest('.stone-row');
-            document.querySelectorAll('.stone-row').forEach(r => { if (r !== rowToExpand) r.classList.add('collapsed'); });
-            rowToExpand.classList.remove('collapsed');
-            return;
-        }
-
-        const clickedInsideRow = e.target.closest('.stone-row');
-        const clickedAddBtn = e.target.closest('#btnAddStone');
-        const clickedRemoveBtn = e.target.closest('.btn-remove');
-        const clickedToggle = e.target.closest('.switch');
-        
-        if (!clickedInsideRow && !clickedAddBtn && !clickedRemoveBtn && !clickedToggle && !e.target.closest('.interest-header') && !e.target.closest('.interest-content')) {
+        const summary = e.target.closest('.stone-summary');
+        if (summary) {
+            const row = summary.closest('.stone-row');
+            document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
+            row.classList.remove('collapsed');
+        } else if (!e.target.closest('.stone-row') && !e.target.closest('#btnAddStone')) {
             document.querySelectorAll('.stone-row').forEach(r => r.classList.add('collapsed'));
         }
     });
 
-    // --- ВЕШАЕМ СЛУШАТЕЛИ НА ВСЕ ПОЛЯ ВВОДА ---
-    document.querySelectorAll('input[type="number"]').forEach(el => el.addEventListener('input', calculate));
-    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => el.addEventListener('change', calculate));
+    // Слушатели для всех статичных инпутов
+    document.querySelectorAll('input[type="number"], input[type="radio"], input[type="checkbox"]').forEach(el => {
+        const event = el.type === 'number' ? 'input' : 'change';
+        el.addEventListener(event, calculate);
+    });
 
-    // ПЕРВИЧНЫЙ РАСЧЕТ ПРИ ЗАГРУЗКЕ
     calculate();
-
-}); // Конец DOMContentLoaded
+});
