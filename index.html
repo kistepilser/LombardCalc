@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ломбардный эксперт | Liquid Glass</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="design.css">
+</head>
+<body>
+
+    <div class="video-bg-container">
+        <video autoplay loop muted playsinline id="bg-video">
+            <source src="https://cdn.pixabay.com/video/2021/08/11/84687-587463773_large.mp4" type="video/mp4">
+        </video>
+        <div class="video-overlay"></div>
+    </div>
+
+    <div class="app-container">
+        <div class="liquid-panel left-panel">
+            <h1>Параметры изделия</h1>
+
+            <div class="switches-grid">
+                <div class="switch-item">
+                    <div class="switch-info"><div>Операция</div><span id="op-status">Залог</span></div>
+                    <label class="switch"><input type="checkbox" id="isBuyout"><span class="slider op-slider"></span></label>
+                </div>
+                <div class="switch-item">
+                    <div class="switch-info"><div>Пустотелое</div><span>Вычет -5%</span></div>
+                    <label class="switch"><input type="checkbox" id="isHollow"><span class="slider"></span></label>
+                </div>
+                <div class="switch-item" id="ins-container">
+                    <div class="switch-info"><div>Страховка</div><span id="ins-status">Включена</span></div>
+                    <label class="switch"><input type="checkbox" id="isInsured" checked><span class="slider"></span></label>
+                </div>
+            </div>
+
+            <div class="section">
+                <span class="section-title">Тип и вес</span>
+                <div class="radio-group" id="itemTypeGroup">
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.1" checked><span class="radio-btn"><span class="calc-val">Кольцо</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn"><span class="calc-val">Серьги</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.1"><span class="radio-btn"><span class="calc-val">Подвес</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn"><span class="calc-val">Браслет</span></span></label>
+                    <label class="radio-label"><input type="radio" name="itemType" value="0.15"><span class="radio-btn"><span class="calc-val">Цепь</span></span></label>
+                </div>
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <label>Общий вес (г)</label>
+                        <input type="number" id="totalWeight" class="liquid-input" placeholder="0.000" step="0.001">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Чистый вес золота (г)</label>
+                        <input type="text" id="netWeight" class="liquid-input" value="0.000" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <span class="section-title">Вставки (Камни, Эмаль)</span>
+                <div id="stones-container"></div>
+                <button class="btn-liquid" id="btnAddStone">+ Добавить вставку</button>
+            </div>
+
+            <div class="section">
+                <span class="section-title">Проба золота</span>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="purity" value="375"><span class="radio-btn"><span class="calc-val">375</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="500"><span class="radio-btn"><span class="calc-val">500</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="583"><span class="radio-btn"><span class="calc-val">583</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="585" checked><span class="radio-btn"><span class="calc-val">585</span></span></label>
+                    <label class="radio-label"><input type="radio" name="purity" value="750"><span class="radio-btn"><span class="calc-val">750</span></span></label>
+                </div>
+            </div>
+
+            <div class="section" style="margin-bottom: 0;">
+                <span class="section-title" id="lbl-price-group">Тариф за грамм (Залог)</span>
+                
+                <div class="radio-group price-layer" id="price-group-zalog">
+                    <label class="radio-label"><input type="radio" name="price_zalog" value="5000" checked><span class="radio-btn double"><span class="calc-val">5 000 ₽</span><span class="base-val">(5 000 ₽)</span></span></label>
+                    <label class="radio-label"><input type="radio" name="price_zalog" value="6000"><span class="radio-btn double"><span class="calc-val">6 000 ₽</span><span class="base-val">(6 000 ₽)</span></span></label>
+                    <label class="radio-label"><input type="radio" name="price_zalog" value="7000" id="btn7000"><span class="radio-btn double"><span class="calc-val">7 000 ₽</span><span class="base-val">(7 000 ₽)</span></span></label>
+                </div>
+                
+                <div class="radio-group price-layer" id="price-group-skupka" style="display: none;">
+                    <label class="radio-label"><input type="radio" name="price_skupka" value="2500"><span class="radio-btn double"><span class="calc-val">2 500 ₽</span><span class="base-val">(2 500 ₽)</span></span></label>
+                    <label class="radio-label"><input type="radio" name="price_skupka" value="3000"><span class="radio-btn double"><span class="calc-val">3 000 ₽</span><span class="base-val">(3 000 ₽)</span></span></label>
+                    <label class="radio-label"><input type="radio" name="price_skupka" value="3500" checked><span class="radio-btn double"><span class="calc-val">3 500 ₽</span><span class="base-val">(3 500 ₽)</span></span></label>
+                    <label class="radio-label"><input type="radio" name="price_skupka" value="4000"><span class="radio-btn double"><span class="calc-val">4 000 ₽</span><span class="base-val">(4 000 ₽)</span></span></label>
+                </div>
+                <div id="limitMsg" class="limit-warning">⚠ Тариф заблокирован: лимит 150 000 ₽ превышен.</div>
+            </div>
+        </div>
+
+        <div class="results-sidebar">
+            <div class="liquid-panel receipt-card">
+                <h2>Расчетный лист</h2>
+                
+                <div id="cart-container" class="cart-container">
+                    <div class="cart-header">Детализация вычетов</div>
+                    <div id="cart-items"></div>
+                    <div class="cart-total"><span>Чистый вес:</span><span id="cart-net-weight">0.000 г</span></div>
+                </div>
+
+                <div class="res-line"><span>Базовый тариф (585):</span><span id="res-base-price">0 ₽</span></div>
+                <div class="res-line"><span>Тариф пересчета (<span id="res-purity-label">585</span>):</span><span id="res-actual-price">0 ₽</span></div>
+                
+                <div id="insurance-blocks" class="insurance-block" style="display: none;">
+                    <div class="res-line"><span class="bold-text">На руки клиенту:</span><span id="res-hand" class="accent-text">0 ₽</span></div>
+                    <div class="res-line" style="margin-top: 10px;"><span>Страховка (23.76%):</span><span id="res-ins">0 ₽</span></div>
+                </div>
+
+                <div class="res-line total">
+                    <span id="total-label" class="total-label">Сумма займа:</span>
+                    <span id="res-total" class="big-price">0 ₽</span>
+                </div>
+
+                <div id="margin-block" class="margin-block">
+                    <div class="res-line margin-line"><span class="margin-title">Прогнозируемая маржа:</span><span id="res-margin" class="margin-val">0 ₽</span></div>
+                    <div class="margin-hint">От розничной цены продажи 6 500 ₽ (585 проба)</div>
+                </div>
+
+                <div id="interest-block" class="interest-block">
+                    <div class="interest-header" id="btn-interest-toggle">
+                        <span>Прогноз процентов (Залог)</span>
+                        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="interest-content">
+                        <div class="input-wrapper" style="margin-bottom: 12px; margin-top: 5px;">
+                            <label>Дата планируемого выкупа</label>
+                            <input type="date" id="targetDate" class="liquid-input date-input">
+                        </div>
+                        <div class="res-line"><span>Дней в залоге:</span><span id="int-days">1</span></div>
+                        <div class="res-line"><span>Процентная ставка:</span><span id="int-percent">0.000%</span></div>
+                        <div class="res-line"><span>Начислено процентов:</span><span id="int-sum" style="color: var(--danger);">0 ₽</span></div>
+                        <div class="res-line int-total">
+                            <span>Итого к возврату:</span>
+                            <span id="int-total-return">0 ₽</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
